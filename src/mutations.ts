@@ -14,9 +14,9 @@ type StandardSchema<T = any> = z.ZodType<T>
  */
 export interface MutationContext {
   userId: string
-  userRoles: string[]
+  userRoles?: string[]
   timestamp: Date
-  requestId: string
+  requestId?: string
   ipAddress?: string
   userAgent?: string
   metadata?: Record<string, any>
@@ -45,6 +45,7 @@ export interface MutationHistory<T> {
   mutationId: string
   mutatorName: string
   mutatorVersion: number
+  version?: number // Alias for mutatorVersion for convenience
   timestamp: Date
   userId: string
   userRoles: string[]
@@ -126,9 +127,343 @@ export interface EntityMutator<T, TInput = Partial<T>> {
 }
 
 /**
+ * Executable mutator with validation and history tracking
+ */
+export interface ExecutableMutator<T, TInput> {
+  name: string
+  version: number
+  type: 'insert' | 'update' | 'delete'
+  inputSchema?: StandardSchema<TInput>
+  beforeMutate?: (input: TInput, context: MutationContext) => Promise<TInput>
+  afterMutate?: (result: T, context: MutationContext) => Promise<T>
+  onSuccess?: (result: T, context: MutationContext) => Promise<void>
+  onError?: (error: Error, context: MutationContext) => Promise<void>
+  requiresApproval?: boolean
+  rollback?: (history: MutationHistory<T>, context: MutationContext) => Promise<any>
+  execute: (input: TInput, context: MutationContext) => Promise<{
+    success: boolean
+    data?: T
+    error?: string
+    history?: MutationHistory<T>
+  }>
+}
+
+/**
  * Mutator factory - Create standard and custom mutators
  */
 export class MutatorFactory {
+  /**
+   * Create an insert mutator
+   */
+  static createInsert<T, TInput = Partial<T>>(config: {
+    name: string
+    version: number
+    inputSchema: StandardSchema<TInput>
+    execute: (input: TInput) => Promise<T>
+    beforeMutate?: (input: TInput, context: MutationContext) => Promise<TInput>
+    afterMutate?: (result: T, context: MutationContext) => Promise<T>
+    onSuccess?: (result: T, context: MutationContext) => Promise<void>
+    onError?: (error: Error, context: MutationContext) => Promise<void>
+    requiresApproval?: boolean
+  }): ExecutableMutator<T, TInput> {
+    return {
+      name: config.name,
+      version: config.version,
+      type: 'insert',
+      inputSchema: config.inputSchema,
+      beforeMutate: config.beforeMutate,
+      afterMutate: config.afterMutate,
+      onSuccess: config.onSuccess,
+      onError: config.onError,
+      requiresApproval: config.requiresApproval,
+      execute: async (input: TInput, context: MutationContext) => {
+        try {
+          // Validate input
+          if (config.inputSchema) {
+            try {
+              input = config.inputSchema.parse(input) as TInput
+            } catch (validationError) {
+              return {
+                success: false,
+                error: validationError instanceof Error ? validationError.message : 'Validation failed',
+              }
+            }
+          }
+
+          // Call beforeMutate hook
+          if (config.beforeMutate) {
+            input = await config.beforeMutate(input, context)
+          }
+
+          // Execute mutation
+          let result = await config.execute(input)
+
+          // Call afterMutate hook
+          if (config.afterMutate) {
+            result = await config.afterMutate(result, context)
+          }
+
+          // Create history record
+          const history: MutationHistory<T> = {
+            mutationId: `${config.name}-${Date.now()}`,
+            mutatorName: config.name,
+            mutatorVersion: config.version,
+            version: config.version,
+            timestamp: context.timestamp,
+            userId: context.userId,
+            userRoles: context.userRoles || [],
+            input,
+            output: result,
+            newState: result as Partial<T>,
+            changedFields: Object.keys(result as any) as Array<keyof T>,
+            success: true,
+          }
+
+          // Call onSuccess hook
+          if (config.onSuccess) {
+            await config.onSuccess(result, context)
+          }
+
+          return {
+            success: true,
+            data: result,
+            history,
+          }
+        } catch (error) {
+          // Call onError hook
+          if (config.onError && error instanceof Error) {
+            await config.onError(error, context)
+          }
+
+          return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error',
+          }
+        }
+      },
+    }
+  }
+
+  /**
+   * Create an update mutator
+   */
+  static createUpdate<T, TInput = Partial<T>>(config: {
+    name: string
+    version: number
+    inputSchema: StandardSchema<TInput>
+    execute: (input: TInput) => Promise<T>
+    beforeMutate?: (input: TInput, context: MutationContext) => Promise<TInput>
+    afterMutate?: (result: T, context: MutationContext) => Promise<T>
+    onSuccess?: (result: T, context: MutationContext) => Promise<void>
+    onError?: (error: Error, context: MutationContext) => Promise<void>
+    requiresApproval?: boolean
+    rollback?: (history: MutationHistory<T>, context: MutationContext) => Promise<any>
+  }): ExecutableMutator<T, TInput> {
+    return {
+      name: config.name,
+      version: config.version,
+      type: 'update',
+      inputSchema: config.inputSchema,
+      beforeMutate: config.beforeMutate,
+      afterMutate: config.afterMutate,
+      onSuccess: config.onSuccess,
+      onError: config.onError,
+      requiresApproval: config.requiresApproval,
+      rollback: config.rollback,
+      execute: async (input: TInput, context: MutationContext) => {
+        try {
+          // Validate input
+          if (config.inputSchema) {
+            try {
+              input = config.inputSchema.parse(input) as TInput
+            } catch (validationError) {
+              return {
+                success: false,
+                error: validationError instanceof Error ? validationError.message : 'Validation failed',
+              }
+            }
+          }
+
+          // Call beforeMutate hook
+          if (config.beforeMutate) {
+            input = await config.beforeMutate(input, context)
+          }
+
+          // Execute mutation
+          let result = await config.execute(input)
+
+          // Call afterMutate hook
+          if (config.afterMutate) {
+            result = await config.afterMutate(result, context)
+          }
+
+          // Create history record
+          const history: MutationHistory<T> = {
+            mutationId: `${config.name}-${Date.now()}`,
+            mutatorName: config.name,
+            mutatorVersion: config.version,
+            version: config.version,
+            timestamp: context.timestamp,
+            userId: context.userId,
+            userRoles: context.userRoles || [],
+            input,
+            output: result,
+            newState: result as Partial<T>,
+            changedFields: Object.keys(result as any) as Array<keyof T>,
+            success: true,
+          }
+
+          // Call onSuccess hook
+          if (config.onSuccess) {
+            await config.onSuccess(result, context)
+          }
+
+          return {
+            success: true,
+            data: result,
+            history,
+          }
+        } catch (error) {
+          // Call onError hook
+          if (config.onError && error instanceof Error) {
+            await config.onError(error, context)
+          }
+
+          return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error',
+          }
+        }
+      },
+    }
+  }
+
+  /**
+   * Create a delete mutator
+   */
+  static createDelete<T, TInput = { id: string }>(config: {
+    name: string
+    version: number
+    inputSchema: StandardSchema<TInput>
+    execute: (input: TInput) => Promise<T>
+    beforeMutate?: (input: TInput, context: MutationContext) => Promise<TInput>
+    afterMutate?: (result: T, context: MutationContext) => Promise<T>
+    onSuccess?: (result: T, context: MutationContext) => Promise<void>
+    onError?: (error: Error, context: MutationContext) => Promise<void>
+  }): ExecutableMutator<T, TInput> {
+    return {
+      name: config.name,
+      version: config.version,
+      type: 'delete',
+      inputSchema: config.inputSchema,
+      beforeMutate: config.beforeMutate,
+      afterMutate: config.afterMutate,
+      onSuccess: config.onSuccess,
+      onError: config.onError,
+      execute: async (input: TInput, context: MutationContext) => {
+        try {
+          // Validate input
+          if (config.inputSchema) {
+            try {
+              input = config.inputSchema.parse(input) as TInput
+            } catch (validationError) {
+              return {
+                success: false,
+                error: validationError instanceof Error ? validationError.message : 'Validation failed',
+              }
+            }
+          }
+
+          // Call beforeMutate hook
+          if (config.beforeMutate) {
+            input = await config.beforeMutate(input, context)
+          }
+
+          // Execute mutation
+          let result = await config.execute(input)
+
+          // Call afterMutate hook
+          if (config.afterMutate) {
+            result = await config.afterMutate(result, context)
+          }
+
+          // Create history record
+          const history: MutationHistory<T> = {
+            mutationId: `${config.name}-${Date.now()}`,
+            mutatorName: config.name,
+            mutatorVersion: config.version,
+            version: config.version,
+            timestamp: context.timestamp,
+            userId: context.userId,
+            userRoles: context.userRoles || [],
+            input,
+            output: result,
+            changedFields: [],
+            success: true,
+          }
+
+          // Call onSuccess hook
+          if (config.onSuccess) {
+            await config.onSuccess(result, context)
+          }
+
+          return {
+            success: true,
+            data: result,
+            history,
+          }
+        } catch (error) {
+          // Call onError hook
+          if (config.onError && error instanceof Error) {
+            await config.onError(error, context)
+          }
+
+          return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error',
+          }
+        }
+      },
+    }
+  }
+
+  /**
+   * Create standard insert, update, delete mutators for an entity
+   */
+  static createStandardMutators<TInsert, TUpdate, TDelete>(
+    entityName: string,
+    schemas: {
+      insert: StandardSchema<TInsert>
+      update: StandardSchema<TUpdate>
+      delete: StandardSchema<TDelete>
+    }
+  ): {
+    insert: ExecutableMutator<any, TInsert>
+    update: ExecutableMutator<any, TUpdate>
+    delete: ExecutableMutator<any, TDelete>
+  } {
+    return {
+      insert: MutatorFactory.createInsert({
+        name: `insert${entityName.charAt(0).toUpperCase()}${entityName.slice(1)}`,
+        version: 1,
+        inputSchema: schemas.insert,
+        execute: async (input) => input,
+      }),
+      update: MutatorFactory.createUpdate({
+        name: `update${entityName.charAt(0).toUpperCase()}${entityName.slice(1)}`,
+        version: 1,
+        inputSchema: schemas.update,
+        execute: async (input) => input,
+      }),
+      delete: MutatorFactory.createDelete({
+        name: `delete${entityName.charAt(0).toUpperCase()}${entityName.slice(1)}`,
+        version: 1,
+        inputSchema: schemas.delete,
+        execute: async (input) => input,
+      }),
+    }
+  }
+
   /**
    * Create standard CRUD mutators for an entity
    */

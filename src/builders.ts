@@ -22,6 +22,96 @@ export class FieldBuilder<T = any> {
     return new FieldBuilder<T>()
   }
 
+  setComponent<C extends ComponentType>(component: C) {
+    (this.config as any).component = component
+    return this
+  }
+
+  setDisplayComponent<C extends ComponentType>(component: C, props?: Record<string, any>) {
+    if (props) {
+      this.config.displayComponent = { component, props } as any
+    } else {
+      this.config.displayComponent = component as any
+    }
+    return this
+  }
+
+  setLoadingComponent<C extends ComponentType>(component: C) {
+    this.config.loadingComponent = component as any
+    return this
+  }
+
+  setEmptyComponent<C extends ComponentType>(component: C) {
+    this.config.emptyComponent = component as any
+    return this
+  }
+
+  setSchema(schema: StandardSchema<any>) {
+    this.config.standardSchema = schema
+    return this
+  }
+
+  setSortable(sortable: boolean | ((a: T, b: T) => number) = true) {
+    this.config.sortable = sortable
+    return this
+  }
+
+  setFilterable(filterable: boolean | ((item: T, filterValue: any) => boolean) = true) {
+    this.config.filterable = filterable
+    return this
+  }
+
+  setLabel(label: string) {
+    (this.config as any).label = label
+    return this
+  }
+
+  setDescription(description: string) {
+    (this.config as any).description = description
+    return this
+  }
+
+  setPlaceholder(placeholder: string) {
+    (this.config as any).placeholder = placeholder
+    return this
+  }
+
+  excludeFromForms() {
+    (this.config as any).excludeFromForms = true
+    return this
+  }
+
+  excludeFromList() {
+    (this.config as any).excludeFromList = true
+    return this
+  }
+
+  setOptional(isOptional = true) {
+    this.config.optional = isOptional
+    return this
+  }
+
+  setEditable(isEditable = true) {
+    this.config.editable = isEditable
+    return this
+  }
+
+  setPermissions(permissions: PermissionConfig) {
+    this.config.permissions = permissions
+    return this
+  }
+
+  setJsType(type: 'string' | 'number' | 'boolean' | 'object' | 'array' | 'date') {
+    this.config.jsType = type
+    return this
+  }
+
+  setDefaultValue(value: T | (() => T)) {
+    this.config.defaultValue = value
+    return this
+  }
+
+  // Backwards compatibility aliases
   displayComponent<C extends ComponentType>(component: C | import('./components').DisplayComponentConfig<C>) {
     this.config.displayComponent = component as any
     return this
@@ -97,9 +187,19 @@ export class DbColumnBuilder<T = any> {
     return this
   }
 
+  // Alias for type()
+  setType(type: DbColumnType<T>) {
+    return this.type(type)
+  }
+
   nullable(nullable = true) {
     this.config.nullable = nullable
     return this
+  }
+
+  // Alias for nullable()
+  setNullable(nullable = true) {
+    return this.nullable(nullable)
   }
 
   default(value: T | (() => T)) {
@@ -107,13 +207,29 @@ export class DbColumnBuilder<T = any> {
     return this
   }
 
+  // Alias for default()
+  setDefault(value: T | (() => T)) {
+    return this.default(value)
+  }
+
   unique(unique = true) {
     this.config.unique = unique
     return this
   }
 
+  // Alias for unique()
+  setUnique(unique = true) {
+    return this.unique(unique)
+  }
+
   indexed(indexed = true) {
     this.config.indexed = indexed
+    return this
+  }
+
+  // Alias for indexed()
+  addToIndex(indexName?: string) {
+    this.config.indexed = true
     return this
   }
 
@@ -161,14 +277,14 @@ export class EntityBuilder<T extends Record<string, any>> {
     fields: Entity<T>['fields']
   }
 
-  constructor(id: string, name: NameConfig) {
+  constructor(id: string, name?: NameConfig) {
     this.config = {
       id,
-      name,
+      name: name || { singular: id, plural: `${id}s`, display: id },
       version: 1,
       createdAt: new Date(),
       db: {
-        table: { name: name.db || name.plural.toLowerCase(), primaryKey: ['id'], columns: new Map() },
+        table: { name: name?.db || name?.plural?.toLowerCase() || `${id}s`, primaryKey: ['id'], columns: new Map() },
         columns: {} as any,
       },
       fields: {} as any,
@@ -181,6 +297,34 @@ export class EntityBuilder<T extends Record<string, any>> {
       plural: plural || `${singular}s`,
       display: singular,
     })
+  }
+
+  setName(singular: string, plural?: string) {
+    this.config.name = {
+      singular,
+      plural: plural || `${singular}s`,
+      display: singular,
+    }
+    return this
+  }
+
+  setTable(name: string, primaryKey: string[]) {
+    this.config.db.table = {
+      ...this.config.db.table,
+      name,
+      primaryKey,
+    }
+    return this
+  }
+
+  addField(name: string, field: FieldMapping<any>) {
+    (this.config.fields as any)[name] = field
+    return this
+  }
+
+  addColumn(name: string, column: DbColumn<any>) {
+    (this.config.db.columns as any)[name] = column
+    return this
   }
 
   description(description: string) {
@@ -358,9 +502,19 @@ export class EntityBuilder<T extends Record<string, any>> {
     return this
   }
 
+  // Alias for permissions()
+  setPermissions(permissions: import('./permissions').EntityPermissions) {
+    return this.permissions(permissions)
+  }
+
   routes(routes: RoutesConfig<T, ComponentType, ComponentType>) {
     this.config.routes = routes
     return this
+  }
+
+  // Alias for routes()
+  setRoutes(routes: RoutesConfig<T, ComponentType, ComponentType>) {
+    return this.routes(routes)
   }
 
   index(index: DbIndex) {
@@ -371,6 +525,11 @@ export class EntityBuilder<T extends Record<string, any>> {
     return this
   }
 
+  // Alias for index()
+  addIndex(index: DbIndex) {
+    return this.index(index)
+  }
+
   constraint(constraint: DbConstraint) {
     if (!this.config.db.constraints) {
       this.config.db.constraints = []
@@ -379,12 +538,22 @@ export class EntityBuilder<T extends Record<string, any>> {
     return this
   }
 
+  // Alias for constraint()
+  addConstraint(constraint: DbConstraint) {
+    return this.constraint(constraint)
+  }
+
   relationship<TForeign = any>(relationship: RelationshipMapping<T, TForeign>) {
     if (!this.config.relationships) {
       this.config.relationships = []
     }
     this.config.relationships.push(relationship)
     return this
+  }
+
+  // Alias for relationship()
+  addRelationship<TForeign = any>(relationship: RelationshipMapping<T, TForeign>) {
+    return this.relationship(relationship)
   }
 
   mutator(name: string, mutator: EntityMutator<any, any>) {
@@ -422,6 +591,18 @@ export class EntityBuilder<T extends Record<string, any>> {
     return this
   }
 
+  // Add lifecycle hook (individual hook)
+  addLifecycleHook<K extends keyof Entity<T>['hooks']>(
+    hookName: K,
+    hook: Entity<T>['hooks'][K]
+  ) {
+    if (!this.config.hooks) {
+      this.config.hooks = {}
+    }
+    this.config.hooks[hookName] = hook as any
+    return this
+  }
+
   build(): Entity<T> {
     // Setup table columns map
     this.config.db.table.columns = new Map(
@@ -448,10 +629,39 @@ export class RelationshipBuilder<TLocal, TForeign = any> {
     version: 1,
   }
 
-  static create<TLocal, TForeign = any>(name: string): RelationshipBuilder<TLocal, TForeign> {
+  static create<TLocal, TForeign = any>(name?: string): RelationshipBuilder<TLocal, TForeign> {
     const builder = new RelationshipBuilder<TLocal, TForeign>()
-    builder.config.name = name
+    if (name) {
+      builder.config.name = name
+    }
     return builder
+  }
+
+  // Set relationship name
+  name(name: string) {
+    this.config.name = name
+    return this
+  }
+
+  setType(type: 'one-to-one' | 'one-to-many' | 'many-to-one' | 'many-to-many') {
+    (this.config as any).type = type
+    this.config.relationType = type
+    return this
+  }
+
+  setForeignEntity(foreignEntity: string | Entity<TForeign>) {
+    this.config.foreignEntity = foreignEntity as any
+    return this
+  }
+
+  setForeignKey(foreignKey: string) {
+    (this.config as any).foreignKey = foreignKey
+    return this
+  }
+
+  setLocalKey(localKey: string) {
+    (this.config as any).localKey = localKey
+    return this
   }
 
   description(description: string) {
@@ -493,6 +703,19 @@ export class RelationshipBuilder<TLocal, TForeign = any> {
     return this
   }
 
+  // Set junction table for many-to-many relationships
+  setJunctionTable(name: string, localColumn?: string, foreignColumn?: string) {
+    if (!this.config.db) {
+      this.config.db = {} as any
+    }
+    (this.config.db as any).junctionTable = {
+      name,
+      localColumn: localColumn || '',
+      foreignColumn: foreignColumn || '',
+    }
+    return this
+  }
+
   foreignKey(
     localColumn: keyof TLocal | string,
     foreignColumn: keyof TForeign | string,
@@ -519,6 +742,26 @@ export class RelationshipBuilder<TLocal, TForeign = any> {
     return this
   }
 
+  // Set cascade options
+  setCascade(onDelete: 'cascade' | 'set-null' | 'restrict' | 'no-action', onUpdate?: 'cascade' | 'set-null' | 'restrict' | 'no-action') {
+    if (!this.config.db) {
+      this.config.db = {} as any
+    }
+    if (!(this.config.db as any).foreignKey) {
+      (this.config.db as any).foreignKey = {
+        localColumn: '',
+        foreignColumn: '',
+        onDelete,
+        onUpdate: onUpdate || onDelete,
+        indexed: true,
+      }
+    } else {
+      (this.config.db as any).foreignKey.onDelete = onDelete
+      (this.config.db as any).foreignKey.onUpdate = onUpdate || onDelete
+    }
+    return this
+  }
+
   display(displayField: keyof TForeign | string, options?: {
     component?: import('./components').ComponentRef
     eager?: boolean
@@ -529,6 +772,19 @@ export class RelationshipBuilder<TLocal, TForeign = any> {
       displayComponent: options?.component,
       eager: options?.eager,
       limit: options?.limit,
+    }
+    return this
+  }
+
+  // Set eager loading
+  setEager(eager = true) {
+    if (!this.config.display) {
+      this.config.display = {
+        displayField: '',
+        eager,
+      }
+    } else {
+      this.config.display.eager = eager
     }
     return this
   }
@@ -582,6 +838,7 @@ export class RelationshipBuilder<TLocal, TForeign = any> {
 export const builders = {
   entity: EntityBuilder.create,
   field: FieldBuilder.create,
+  column: DbColumnBuilder.create, // Alias for dbColumn
   dbColumn: DbColumnBuilder.create,
   relationship: RelationshipBuilder.create,
 }

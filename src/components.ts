@@ -138,6 +138,13 @@ export class ComponentRegistry {
   }
 
   /**
+   * List all registered component names (alias for getAll)
+   */
+  static list(): string[] {
+    return this.getAll()
+  }
+
+  /**
    * Clear all registered components
    */
   static clear(): void {
@@ -186,11 +193,11 @@ export function isDisplayComponentConfig<C extends ComponentType>(
 
 export function getComponentProps<C extends ComponentType>(
   value: C | ComponentWithProps<C> | undefined | null
-): Parameters<C>[0] | undefined {
+): Parameters<C>[0] | {} {
   if (isComponentWithProps(value)) {
     return value.props
   }
-  return undefined
+  return {}
 }
 
 /**

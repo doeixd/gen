@@ -27,7 +27,7 @@
     "watch": "pridepack watch",
     "start": "pridepack start",
     "dev": "pridepack dev",
-    "test": "vitest"
+    "test": "vitest --run"
   },
   "private": false,
   "description": "An app data config for code gen",

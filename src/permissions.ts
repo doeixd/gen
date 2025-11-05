@@ -9,9 +9,17 @@
  */
 export interface User {
   id: string
-  roles: string[]
+  role?: string // Single role for simple cases
+  roles?: string[] // Multiple roles
   organizationId?: string
   attributes?: Record<string, any>
+}
+
+// Helper to get user roles array
+function getUserRoles(user: User): string[] {
+  if (user.roles) return user.roles
+  if (user.role) return [user.role]
+  return []
 }
 
 /**
@@ -87,9 +95,73 @@ export interface PermissionConfig {
 }
 
 /**
- * Entity-level permissions (extends base PermissionConfig)
+ * Entity-level permissions
  */
-export interface EntityPermissions extends PermissionConfig {
+export interface EntityPermissions {
+  // Role-based permissions (simple format for tests)
+  role?: Record<string, {
+    read?: boolean
+    write?: boolean
+    create?: boolean
+    update?: boolean
+    delete?: boolean
+    admin?: boolean
+  }>
+
+  // Ownership permissions (simplified for tests)
+  ownership?: {
+    ownerField: string
+    allowOwner?: string[]
+  }
+
+  // Organization permissions (simplified for tests)
+  organization?: {
+    field: string
+    allowSameOrg?: boolean
+  }
+
+  // ABAC permissions
+  abac?: {
+    rules: Array<{
+      attribute: string
+      operator: 'equals' | 'in' | 'contains' | 'gt' | 'lt'
+      value: any
+      action: string[]
+    }>
+  }
+
+  // Temporal permissions (extended)
+  temporal?: {
+    validFrom?: Date
+    validUntil?: Date
+    timeWindows?: Array<{
+      start: Date | string
+      end: Date | string
+      actions: string[]
+    }>
+    schedule?: {
+      daysOfWeek?: number[]
+      hoursOfDay?: { start: number; end: number }
+      actions?: string[]
+      timezone?: string
+    }
+  }
+
+  // Field-level permissions
+  fieldLevel?: Record<string, {
+    read?: string[]
+    write?: string[]
+    mask?: ((value: any) => any) | boolean
+  }>
+
+  // Conditional permissions
+  conditional?: {
+    conditions: Array<{
+      check: (user: User, resource?: any) => boolean
+      actions: string[]
+    }>
+  }
+
   // Route-level permissions
   routes?: {
     list?: PermissionConfig
@@ -103,7 +175,7 @@ export interface EntityPermissions extends PermissionConfig {
   // Form-level permissions
   forms?: {
     create?: {
-      fields: string[] // Which fields are visible
+      fields: string[]
       permissions: PermissionConfig
     }
     edit?: {
@@ -120,6 +192,13 @@ export interface EntityPermissions extends PermissionConfig {
   api?: {
     endpoints: Record<string, PermissionConfig>
   }
+
+  // Include base PermissionConfig fields (for backwards compatibility)
+  roles?: PermissionConfig['roles']
+  attributes?: PermissionConfig['attributes']
+  fieldPermissions?: PermissionConfig['fieldPermissions']
+  conditions?: PermissionConfig['conditions']
+  custom?: PermissionConfig['custom']
 }
 
 /**
@@ -130,6 +209,7 @@ export interface PermissionCheckResult {
   reason?: string
   missingRoles?: string[]
   failedConditions?: string[]
+  checkedPermissions?: string[] // Which permission types were checked
 }
 
 /**
@@ -161,12 +241,13 @@ export class PermissionEngine {
     if (permission.roles) {
       const requiredRoles = permission.roles[action]
       if (requiredRoles && requiredRoles.length > 0) {
-        const hasRole = requiredRoles.some(role => user.roles.includes(role))
+        const userRoles = getUserRoles(user)
+        const hasRole = requiredRoles.some(role => userRoles.includes(role))
         if (!hasRole) {
           return {
             allowed: false,
             reason: 'Insufficient role permissions',
-            missingRoles: requiredRoles.filter(role => !user.roles.includes(role)),
+            missingRoles: requiredRoles.filter(role => !userRoles.includes(role)),
           }
         }
       }
@@ -187,8 +268,9 @@ export class PermissionEngine {
     if (permission.organization?.required && resource) {
       const resourceOrgId = resource[permission.organization.orgField]
       if (resourceOrgId !== user.organizationId) {
+        const userRoles = getUserRoles(user)
         const canAccessCrossOrg = permission.organization.crossOrgRoles?.some(role =>
-          user.roles.includes(role)
+          userRoles.includes(role)
         )
         if (!canAccessCrossOrg) {
           return {
@@ -334,7 +416,8 @@ export class PermissionEngine {
       if (fieldPermissions) {
         const requiredRoles = fieldPermissions[action]
         if (requiredRoles && requiredRoles.length > 0) {
-          const hasPermission = requiredRoles.some(role => user.roles.includes(role))
+          const userRoles = getUserRoles(user)
+          const hasPermission = requiredRoles.some(role => userRoles.includes(role))
           if (!hasPermission) {
             continue // Skip this field
           }
@@ -373,5 +456,238 @@ export class PermissionEngine {
     }
 
     return this.checkPermission(user, routePermissions, 'read', resource)
+  }
+
+  /**
+   * Synchronous permission check - wraps async checkPermission
+   * For test compatibility and simple cases
+   */
+  static check(
+    user: User,
+    permissions: EntityPermissions,
+    action: 'read' | 'write' | 'create' | 'update' | 'delete' | string,
+    resource?: any
+  ): PermissionCheckResult {
+    const checkedPermissions: string[] = []
+
+    // Handle role-based permissions
+    if ((permissions as any).role) {
+      checkedPermissions.push('role')
+      const rolePerms = (permissions as any).role
+      const userRole = user.role || (user.roles && user.roles[0])
+
+      if (!userRole || !rolePerms[userRole]) {
+        return {
+          allowed: false,
+          reason: `No permissions defined for role: ${userRole}`,
+          checkedPermissions
+        }
+      }
+
+      const hasPermission = rolePerms[userRole][action] === true
+      if (!hasPermission) {
+        return {
+          allowed: false,
+          reason: `Role ${userRole} does not have ${action} permission`,
+          checkedPermissions
+        }
+      }
+    }
+
+    // Handle ownership-based permissions
+    if (permissions.ownership && resource) {
+      checkedPermissions.push('ownership')
+      const ownerField = permissions.ownership.ownerField
+      const ownerId = ownerField.includes('.')
+        ? ownerField.split('.').reduce((obj, key) => obj?.[key], resource)
+        : resource[ownerField]
+
+      const allowedActions = permissions.ownership.allowOwner || []
+      if (ownerId !== user.id || !allowedActions.includes(action)) {
+        return {
+          allowed: false,
+          reason: 'User does not own this resource',
+          checkedPermissions
+        }
+      }
+    }
+
+    // Handle organization-based permissions
+    if (permissions.organization && resource) {
+      checkedPermissions.push('organization')
+      const orgField = permissions.organization.field
+      const resourceOrgId = resource[orgField]
+
+      if (permissions.organization.allowSameOrg && resourceOrgId !== user.organizationId) {
+        return {
+          allowed: false,
+          reason: 'Resource belongs to different organization',
+          checkedPermissions
+        }
+      }
+    }
+
+    // Handle ABAC
+    if (permissions.abac && permissions.abac.rules) {
+      checkedPermissions.push('abac')
+      for (const rule of permissions.abac.rules) {
+        if (!rule.action.includes(action)) continue
+
+        const userValue = user.attributes?.[rule.attribute]
+        let matches = false
+
+        switch (rule.operator) {
+          case 'equals':
+            matches = userValue === rule.value
+            break
+          case 'in':
+            matches = Array.isArray(rule.value) && rule.value.includes(userValue)
+            break
+          default:
+            matches = false
+        }
+
+        if (!matches) {
+          return {
+            allowed: false,
+            reason: `Attribute ${rule.attribute} does not match`,
+            checkedPermissions
+          }
+        }
+      }
+    }
+
+    // Handle temporal permissions
+    if (permissions.temporal) {
+      checkedPermissions.push('temporal')
+      const now = new Date()
+
+      if (permissions.temporal.timeWindows) {
+        const inWindow = permissions.temporal.timeWindows.some(window => {
+          const start = window.start instanceof Date ? window.start : new Date(window.start)
+          const end = window.end instanceof Date ? window.end : new Date(window.end)
+          return now >= start && now <= end && window.actions.includes(action)
+        })
+        if (!inWindow) {
+          return {
+            allowed: false,
+            reason: 'Outside of allowed time window',
+            checkedPermissions
+          }
+        }
+      }
+
+      if (permissions.temporal.schedule) {
+        const schedule = permissions.temporal.schedule
+        const dayOfWeek = now.getDay()
+        const hour = now.getHours()
+
+        if (schedule.daysOfWeek && !schedule.daysOfWeek.includes(dayOfWeek)) {
+          return {
+            allowed: false,
+            reason: 'Not allowed on this day of week',
+            checkedPermissions
+          }
+        }
+
+        if (schedule.hoursOfDay) {
+          const { start, end } = schedule.hoursOfDay
+          if (hour < start || hour >= end) {
+            return {
+              allowed: false,
+              reason: 'Not allowed at this time',
+              checkedPermissions
+            }
+          }
+        }
+
+        if (schedule.actions && !schedule.actions.includes(action)) {
+          return {
+            allowed: false,
+            reason: 'Action not allowed in schedule',
+            checkedPermissions
+          }
+        }
+      }
+    }
+
+    // Handle conditional permissions
+    if (permissions.conditional) {
+      checkedPermissions.push('conditional')
+      for (const condition of permissions.conditional.conditions) {
+        if (condition.check(user, resource) && condition.actions.includes(action)) {
+          return { allowed: true, checkedPermissions }
+        }
+      }
+      return {
+        allowed: false,
+        reason: 'No conditional permission matched',
+        checkedPermissions
+      }
+    }
+
+    // All checks passed
+    return { allowed: true, checkedPermissions }
+  }
+
+  /**
+   * Check field-level permissions
+   */
+  static checkField(
+    user: User,
+    permissions: EntityPermissions,
+    field: string,
+    action: 'read' | 'write'
+  ): PermissionCheckResult {
+    if (!permissions.fieldLevel) {
+      return { allowed: true }
+    }
+
+    const fieldPerms = permissions.fieldLevel[field]
+    if (!fieldPerms) {
+      return { allowed: true }
+    }
+
+    const requiredRoles = fieldPerms[action]
+    if (!requiredRoles) {
+      return { allowed: true }
+    }
+
+    const userRole = user.role || (user.roles && user.roles[0])
+    if (!userRole) {
+      return { allowed: false, reason: 'User has no role' }
+    }
+
+    const hasPermission = requiredRoles.includes(userRole)
+    return {
+      allowed: hasPermission,
+      reason: hasPermission ? undefined : `Role ${userRole} cannot ${action} field ${field}`,
+    }
+  }
+
+  /**
+   * Apply field-level masking to data
+   */
+  static maskFields(
+    user: User,
+    permissions: EntityPermissions,
+    data: any
+  ): any {
+    if (!permissions.fieldLevel) {
+      return data
+    }
+
+    const masked = { ...data }
+
+    for (const [field, fieldPerms] of Object.entries(permissions.fieldLevel)) {
+      if (fieldPerms.mask && data[field] !== undefined) {
+        const value = data[field]
+        masked[field] = typeof fieldPerms.mask === 'function'
+          ? fieldPerms.mask(value)
+          : value
+      }
+    }
+
+    return masked
   }
 }

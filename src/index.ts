@@ -96,6 +96,7 @@ export type {
   MutationResult,
   MutationHistory,
   EntityMutator,
+  ExecutableMutator,
   InsertMutationFn,
   UpdateMutationFn,
   DeleteMutationFn,
