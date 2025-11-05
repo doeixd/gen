@@ -238,6 +238,11 @@ export class DbColumnBuilder<T = any> {
     return this
   }
 
+  // Alias for primary()
+  setPrimaryKey(primary = true) {
+    return this.primary(primary)
+  }
+
   autoIncrement(autoIncrement = true) {
     this.config.autoIncrement = autoIncrement
     return this
@@ -517,17 +522,22 @@ export class EntityBuilder<T extends Record<string, any>> {
     return this.routes(routes)
   }
 
-  index(index: DbIndex) {
+  index(name: string, columns: string[], options?: { unique?: boolean }) {
     if (!this.config.db.indexes) {
       this.config.db.indexes = []
     }
-    this.config.db.indexes.push(index)
+    this.config.db.indexes.push({
+    name,
+  tableName: this.config.db.table.name,
+  columns,
+    unique: options?.unique || false,
+  })
     return this
   }
 
   // Alias for index()
-  addIndex(index: DbIndex) {
-    return this.index(index)
+  addIndex(name: string, columns: string[], options?: { unique?: boolean }) {
+    return this.index(name, columns, options)
   }
 
   constraint(constraint: DbConstraint) {
@@ -545,15 +555,71 @@ export class EntityBuilder<T extends Record<string, any>> {
 
   relationship<TForeign = any>(relationship: RelationshipMapping<T, TForeign>) {
     if (!this.config.relationships) {
-      this.config.relationships = []
+      this.config.relationships = {}
     }
-    this.config.relationships.push(relationship)
+    this.config.relationships[relationship.name] = relationship
     return this
   }
 
-  // Alias for relationship()
-  addRelationship<TForeign = any>(relationship: RelationshipMapping<T, TForeign>) {
-    return this.relationship(relationship)
+  // Add relationship by name and config (overloaded method)
+  addRelationship<TForeign = any>(nameOrRelationship: string | RelationshipMapping<T, TForeign>, config?: {
+    type: 'one-to-one' | 'one-to-many' | 'many-to-one' | 'many-to-many'
+    foreignEntity: string | Entity<TForeign>
+    foreignKey?: string
+    localKey?: string
+    junctionTable?: string
+    cascade?: { onDelete?: string; onUpdate?: string }
+    eager?: boolean
+  }) {
+    if (typeof nameOrRelationship === 'string' && config) {
+      // Called with name and config
+      return this.addRelationshipByName(nameOrRelationship, config)
+    } else if (typeof nameOrRelationship === 'object') {
+      // Called with RelationshipMapping object
+      return this.relationship(nameOrRelationship)
+    }
+    return this
+  }
+
+  // Add relationship by name and config
+  addRelationshipByName<TForeign = any>(name: string, config: {
+    type: 'one-to-one' | 'one-to-many' | 'many-to-one' | 'many-to-many'
+    foreignEntity: string | Entity<TForeign>
+    foreignKey?: string
+    localKey?: string
+    junctionTable?: string
+    cascade?: { onDelete?: string; onUpdate?: string }
+    eager?: boolean
+  }) {
+    const relationship = RelationshipBuilder.create<T, TForeign>(name)
+      .setType(config.type)
+      .setLocalEntity(this.config.id)
+      .setForeignEntity(config.foreignEntity)
+
+    if (config.foreignKey) {
+      relationship.setForeignKey(config.foreignKey)
+    }
+    if (config.localKey) {
+      relationship.setLocalKey(config.localKey)
+    }
+    if (config.junctionTable) {
+      relationship.setJunctionTable(config.junctionTable)
+    }
+    if (config.cascade) {
+      relationship.setCascade(
+        config.cascade.onDelete as any,
+        config.cascade.onUpdate as any
+      )
+    }
+    if (config.eager !== undefined) {
+      relationship.setEagerLoad(config.eager)
+    }
+
+    if (!this.config.relationships) {
+      this.config.relationships = {}
+    }
+    this.config.relationships[name] = relationship.build()
+    return this
   }
 
   mutator(name: string, mutator: EntityMutator<any, any>) {
@@ -596,10 +662,10 @@ export class EntityBuilder<T extends Record<string, any>> {
     hookName: K,
     hook: Entity<T>['hooks'][K]
   ) {
-    if (!this.config.hooks) {
-      this.config.hooks = {}
+    if (!this.config.lifecycle) {
+      this.config.lifecycle = {}
     }
-    this.config.hooks[hookName] = hook as any
+    (this.config.lifecycle as any)[hookName] = hook
     return this
   }
 
@@ -649,6 +715,11 @@ export class RelationshipBuilder<TLocal, TForeign = any> {
     return this
   }
 
+  setLocalEntity(localEntity: string | Entity<TLocal>) {
+  this.config.localEntity = localEntity as any
+  return this
+  }
+
   setForeignEntity(foreignEntity: string | Entity<TForeign>) {
     this.config.foreignEntity = foreignEntity as any
     return this
@@ -663,6 +734,8 @@ export class RelationshipBuilder<TLocal, TForeign = any> {
     (this.config as any).localKey = localKey
     return this
   }
+
+
 
   description(description: string) {
     this.config.description = description
@@ -787,6 +860,11 @@ export class RelationshipBuilder<TLocal, TForeign = any> {
       this.config.display.eager = eager
     }
     return this
+  }
+
+  // Alias for setEager
+  setEagerLoad(eager = true) {
+    return this.setEager(eager)
   }
 
   query(

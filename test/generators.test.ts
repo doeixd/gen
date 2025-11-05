@@ -14,51 +14,55 @@ describe('Code Generators', () => {
     });
   });
 
-  const mockEntity = createEntity({
-    id: 'user',
-    name: { singular: 'User', plural: 'Users' },
-    db: {
-      table: {
-        name: 'users',
-        primaryKey: ['id'],
-      },
-      columns: {
-        id: { type: dbTypes.uuid().primaryKey() },
-        email: { type: dbTypes.string(255).unique() },
-        name: { type: dbTypes.string(100) },
-        age: { type: dbTypes.integer() },
-        createdAt: { type: dbTypes.timestamp().defaultNow() },
-      },
-      indexes: [
-        {
-          name: 'email_idx',
-          columns: ['email'],
-          unique: true,
+  let mockEntity: ReturnType<typeof createEntity>;
+
+  beforeEach(() => {
+    mockEntity = createEntity({
+      id: 'user',
+      name: { singular: 'User', plural: 'Users' },
+      db: {
+        table: {
+          name: 'users',
+          primaryKey: ['id'],
         },
-      ],
-    },
-    fields: {
-      id: {
-        component: ComponentRegistry.get('TextField')!,
-        standardSchema: validators.uuid,
+        columns: {
+          id: { type: dbTypes.uuid().primaryKey() },
+          email: { type: dbTypes.string(255).unique() },
+          name: { type: dbTypes.string(100) },
+          age: { type: dbTypes.integer() },
+          createdAt: { type: dbTypes.timestamp().defaultNow() },
+        },
+        indexes: [
+          {
+            name: 'email_idx',
+            columns: ['email'],
+            unique: true,
+          },
+        ],
       },
-      email: {
-        component: ComponentRegistry.get('EmailField')!,
-        standardSchema: validators.email,
+      fields: {
+        id: {
+          component: ComponentRegistry.get('TextField')!,
+          standardSchema: validators.uuid,
+        },
+        email: {
+          component: ComponentRegistry.get('EmailField')!,
+          standardSchema: validators.email,
+        },
+        name: {
+          component: ComponentRegistry.get('TextField')!,
+          standardSchema: validators.stringMin(1),
+        },
+        age: {
+          component: ComponentRegistry.get('NumberField')!,
+          standardSchema: validators.number,
+        },
+        createdAt: {
+          component: ComponentRegistry.get('TextField')!,
+          standardSchema: validators.date,
+        },
       },
-      name: {
-        component: ComponentRegistry.get('TextField')!,
-        standardSchema: validators.stringMin(1),
-      },
-      age: {
-        component: ComponentRegistry.get('NumberField')!,
-        standardSchema: validators.number,
-      },
-      createdAt: {
-        component: ComponentRegistry.get('TextField')!,
-        standardSchema: validators.date,
-      },
-    },
+    });
   });
 
   describe('Database Schema Generation', () => {
@@ -275,8 +279,9 @@ describe('Code Generators', () => {
   describe('Frontend Code Generation Patterns', () => {
     it('should have component mappings for all fields', () => {
       Object.entries(mockEntity.fields).forEach(([name, field]) => {
-        expect(field.component).toBeTruthy();
-        expect(typeof field.component).toBe('function');
+        const component = field.inputComponent || field.component;
+        expect(component).toBeTruthy();
+        expect(typeof component).toBe('function');
       });
     });
 
@@ -499,7 +504,8 @@ describe('Code Generators', () => {
 
     it('should have all data needed for frontend generation', () => {
       Object.entries(mockEntity.fields).forEach(([name, field]) => {
-        expect(field.component).toBeTruthy();
+        const component = field.inputComponent || field.component;
+        expect(component).toBeTruthy();
         expect(field.standardSchema).toBeTruthy();
       });
     });

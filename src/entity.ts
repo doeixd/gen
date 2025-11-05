@@ -8,6 +8,7 @@ import type { ComponentRef, ComponentWithProps, DisplayComponentConfig, InputCom
 import type { DbTable, DbColumn, DbIndex, DbConstraint } from './database'
 import type { PermissionConfig, EntityPermissions, RoutePermissionConfig } from './permissions'
 import type { EntityMutator, MutationContext, MutationHistory } from './mutations'
+import type { EntityErrorConfig } from './errors'
 
 declare global {
   type RoleType = 'user' | 'admin' | 'superadmin'
@@ -101,26 +102,59 @@ export interface ValidationConfig<T, _C extends ComponentType = ComponentType> {
 }
 
 /**
- * Field mapping configuration
- */
+* Field mapping configuration
+*/
 export interface FieldMapping<T, C extends ComponentType = ComponentType> {
-  displayComponent?: C | DisplayComponentConfig<C>
-  inputComponent?: C | ComponentWithProps<C>;
-  loadingComponent?: C | ComponentWithProps<C>;
-  emptyComponent?: C | ComponentWithProps<C>;
-  defaultValue?: T | (() => T);
-  version?: number;
-  validation?: (value: any) => import('./validators').ValidationResult | Promise<import('./validators').ValidationResult> | ValidationConfig<T,C>
-  typescriptType?: T // Phantom type for type inference
-  sortable?: boolean | ((a: T, b: T) => number)
-  filterable?: boolean | ((item: T, filterValue: any) => boolean)
-  routes?: RoutesConfig<C, C>
-  name?: string | NameConfig
-  optional?: boolean
-  editable?: boolean
-  standardSchema?: StandardSchema<T>
-  permissions?: PermissionConfig
-  jsType?: 'string' | 'number' | 'boolean' | 'object' | 'array' | 'date'
+displayComponent?: C | DisplayComponentConfig<C>
+inputComponent?: C | ComponentWithProps<C>;
+// Alias for inputComponent for backwards compatibility
+component?: C | ComponentWithProps<C>;
+loadingComponent?: C | ComponentWithProps<C>;
+emptyComponent?: C | ComponentWithProps<C>;
+defaultValue?: T | (() => T);
+version?: number;
+validation?: (value: any) => import('./validators').ValidationResult | Promise<import('./validators').ValidationResult> | ValidationConfig<T,C>
+typescriptType?: T // Phantom type for type inference
+sortable?: boolean | ((a: T, b: T) => number)
+filterable?: boolean | ((item: T, filterValue: any) => boolean)
+routes?: RoutesConfig<C, C>
+name?: string | NameConfig
+optional?: boolean
+editable?: boolean
+standardSchema?: StandardSchema<T>
+permissions?: PermissionConfig
+jsType?: 'string' | 'number' | 'boolean' | 'object' | 'array' | 'date'
+excludeFromForms?: boolean
+excludeFromList?: boolean
+
+// API documentation
+openapi?: {
+description?: string
+example?: any
+deprecated?: boolean
+}
+
+// GraphQL
+  graphql?: {
+type?: string
+directives?: string[]
+}
+
+// Serialization
+  serialize?: boolean
+deserialize?: boolean
+transform?: (value: any) => any
+
+// Search/Indexing
+  searchable?: boolean
+indexed?: boolean
+weight?: number // For search ranking
+
+// Form generation
+  formGroup?: string
+formOrder?: number
+placeholder?: string
+helpText?: string
 }
 
 /**
@@ -269,7 +303,7 @@ export type Entity<
   }
 
   // ===== Relationships =====
-  relationships?: RelationshipMapping<T, any, C>[]
+  relationships?: Record<string, RelationshipMapping<T, any, C>>
 
   // ===== Routes =====
   routes?: RoutesConfig<T, C, R>
@@ -321,20 +355,77 @@ export type Entity<
     afterDelete?: (id: string, ctx: MutationContext) => Promise<void>
   }
 
+  // Alias for hooks for backwards compatibility
+  lifecycle?: {
+    beforeCreate?: (data: Partial<T>, ctx: MutationContext) => Promise<void>
+    afterCreate?: (data: T, ctx: MutationContext) => Promise<void>
+    beforeUpdate?: (id: string, data: Partial<T>, ctx: MutationContext) => Promise<void>
+    afterUpdate?: (data: T, ctx: MutationContext) => Promise<void>
+    beforeDelete?: (id: string, ctx: MutationContext) => Promise<void>
+    afterDelete?: (id: string, ctx: MutationContext) => Promise<void>
+  }
+
   // ===== Computed Fields =====
   computed?: {
-    [key: string]: {
-      compute: (entity: T) => any
-      dependencies: Array<keyof T>
-      cached?: boolean
-      ttl?: number
-    }
+  [key: string]: {
+  compute: (entity: T) => any
+  dependencies: Array<keyof T>
+  cached?: boolean
+  ttl?: number
+  }
   }
 
   // ===== Sync Configuration =====
   sync?: SyncConfig<T>
   getKey?: (item: T) => string | number
   rowUpdateMode?: 'partial' | 'full'
+
+  // ===== Error Configuration =====
+  errors?: EntityErrorConfig
+
+  // ===== Code Generation Configuration =====
+  // API generation
+  generateAPI?: boolean
+  apiBasePath?: string
+  openapi?: {
+    tags?: string[]
+    summary?: string
+    description?: string
+  }
+
+  // GraphQL generation
+  generateGraphQL?: boolean
+  graphql?: {
+    type?: 'type' | 'input' | 'interface'
+    implements?: string[]
+    directives?: string[]
+  }
+
+  // Frontend generation
+  generateComponents?: boolean
+  componentPath?: string
+  formLayout?: 'vertical' | 'horizontal' | 'inline'
+
+  // Database generation
+  generateMigrations?: boolean
+  migrationStrategy?: 'incremental' | 'snapshot'
+
+  // Serialization
+  serializeAs?: 'json' | 'xml' | 'csv'
+  excludeFields?: string[]
+  includeFields?: string[]
+
+  // Search/Indexing
+  searchableFields?: string[]
+  indexedFields?: string[]
+
+  // Audit/Logging
+  auditChanges?: boolean
+  logLevel?: 'debug' | 'info' | 'warn' | 'error'
+
+  // Caching
+  cacheStrategy?: 'none' | 'memory' | 'redis' | 'filesystem'
+  cacheTTL?: number
 
   // ===== Deprecated/Migration =====
   deprecated?: boolean

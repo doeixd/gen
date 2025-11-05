@@ -259,7 +259,8 @@ describe('Builders', () => {
         .build();
 
       expect(entity.relationships).toBeDefined();
-      expect(entity.relationships?.author?.type).toBe('many-to-one');
+      expect(entity.relationships!.author).toBeDefined();
+      expect(entity.relationships!.author.relationType).toBe('many-to-one');
     });
 
     it('should set routes', () => {
@@ -299,59 +300,64 @@ describe('Builders', () => {
 
   describe('RelationshipBuilder', () => {
     it('should build one-to-one relationship', () => {
-      const rel = new RelationshipBuilder()
+      const rel = RelationshipBuilder.create('userProfile')
         .setType('one-to-one')
+        .setLocalEntity('user')
         .setForeignEntity('profile')
         .setForeignKey('userId')
         .setLocalKey('id')
         .build();
 
-      expect(rel.type).toBe('one-to-one');
+      expect(rel.relationType).toBe('one-to-one');
       expect(rel.foreignEntity).toBe('profile');
     });
 
     it('should build one-to-many relationship', () => {
-      const rel = new RelationshipBuilder()
+      const rel = RelationshipBuilder.create('userPosts')
         .setType('one-to-many')
+        .setLocalEntity('user')
         .setForeignEntity('post')
         .setForeignKey('userId')
         .build();
 
-      expect(rel.type).toBe('one-to-many');
+      expect(rel.relationType).toBe('one-to-many');
     });
 
     it('should build many-to-many relationship', () => {
-      const rel = new RelationshipBuilder()
+      const rel = RelationshipBuilder.create('postTags')
         .setType('many-to-many')
+        .setLocalEntity('post')
         .setForeignEntity('tag')
-        .setJunctionTable('post_tags', { localKey: 'postId', foreignKey: 'tagId' })
+        .setJunctionTable('post_tags')
         .build();
 
-      expect(rel.type).toBe('many-to-many');
-      expect(rel.junctionTable).toBe('post_tags');
+      expect(rel.relationType).toBe('many-to-many');
+      expect(rel.db.junctionTable?.name).toBe('post_tags');
     });
 
     it('should set cascade options', () => {
-      const rel = new RelationshipBuilder()
+      const rel = RelationshipBuilder.create('postComments')
         .setType('one-to-many')
+        .setLocalEntity('post')
         .setForeignEntity('comment')
         .setForeignKey('postId')
-        .setCascade('CASCADE', 'CASCADE')
+        .setCascade('cascade', 'cascade')
         .build();
 
-      expect(rel.onDelete).toBe('CASCADE');
-      expect(rel.onUpdate).toBe('CASCADE');
+      expect(rel.db.foreignKey.onDelete).toBe('cascade');
+      expect(rel.db.foreignKey.onUpdate).toBe('cascade');
     });
 
     it('should set relationship as eager loaded', () => {
-      const rel = new RelationshipBuilder()
+      const rel = RelationshipBuilder.create('postAuthor')
         .setType('many-to-one')
+        .setLocalEntity('post')
         .setForeignEntity('user')
         .setForeignKey('userId')
-        .setEager(true)
+        .setEagerLoad(true)
         .build();
 
-      expect(rel.eager).toBe(true);
+      expect(rel.display.eager).toBe(true);
     });
   });
 
@@ -388,13 +394,14 @@ describe('Builders', () => {
 
     it('should provide relationship builder', () => {
       const rel = builders
-        .relationship()
+        .relationship('userProfile')
         .setType('one-to-one')
+        .setLocalEntity('user')
         .setForeignEntity('profile')
         .setForeignKey('userId')
         .build();
 
-      expect(rel.type).toBe('one-to-one');
+      expect(rel.relationType).toBe('one-to-one');
     });
   });
 
@@ -467,7 +474,6 @@ describe('Builders', () => {
           type: 'many-to-many',
           foreignEntity: 'tag',
           junctionTable: 'post_tags',
-          junctionColumns: { localKey: 'postId', foreignKey: 'tagId' },
         })
         .build();
 

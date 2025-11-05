@@ -5,6 +5,7 @@
 
 import type { Entity } from '../entity'
 import { getFieldNames } from '../utils'
+import { html, conditional, map } from '../tags'
 
 export interface ReactListTemplateOptions {
   entity: Entity<any>
@@ -15,71 +16,72 @@ export interface ReactListTemplateOptions {
 }
 
 export function generateReactListComponent(options: ReactListTemplateOptions): string {
-  const { entity, virtualScrolling = true, pagination = false, enableSearch = true, enableSort = true } = options
-  const entityName = entity.name.singular
-  const pluralName = entity.name.plural
-  const tableName = entity.db.table.name
-  const fields = getFieldNames(entity)
+const { entity, virtualScrolling = true, pagination = false, enableSearch = true, enableSort = true } = options
+const entityName = entity.name.singular
+const pluralName = entity.name.plural
+const tableName = entity.db.table.name
+const fields = getFieldNames(entity)
 
-  return `\
+return html`
 import { useQuery } from '@tanstack/react-query'
-${virtualScrolling ? "import { useVirtualizer } from '@tanstack/react-virtual'" : ''}
+${conditional(virtualScrolling, `import { useVirtualizer } from '@tanstack/react-virtual'`)}
 import { useState, useRef } from 'react'
 
 export interface ${entityName}ListProps {
-  onItemClick?: (item: ${entityName}) => void
-  onEdit?: (item: ${entityName}) => void
-  onDelete?: (item: ${entityName}) => void
+onItemClick?: (item: ${entityName}) => void
+onEdit?: (item: ${entityName}) => void
+onDelete?: (item: ${entityName}) => void
 }
 
 export function ${entityName}List({ onItemClick, onEdit, onDelete }: ${entityName}ListProps) {
-  const [search, setSearch] = useState('')
-  const [sortField, setSortField] = useState<keyof ${entityName} | null>(null)
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
-${virtualScrolling ? '  const parentRef = useRef<HTMLDivElement>(null)' : ''}
+const [search, setSearch] = useState('')
+const [sortField, setSortField] = useState<keyof ${entityName} | null>(null)
+const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
+${conditional(virtualScrolling, '  const parentRef = useRef<HTMLDivElement>(null)')}
 
-  // Fetch data
-  const { data: items = [], isLoading, error } = useQuery({
-    queryKey: ['${tableName}'],
-    queryFn: async () => {
-      // TODO: Implement data fetching
-      return [] as ${entityName}[]
-    }
-  })
+// Fetch data
+const { data: items = [], isLoading, error } = useQuery({
+queryKey: ['${tableName}'],
+queryFn: async () => {
+// TODO: Implement data fetching
+return [] as ${entityName}[]
+}
+})
 
-${enableSearch ? `\
-  // Filter by search
-  const filteredItems = items.filter(item => {
-    if (!search) return true
-    const searchLower = search.toLowerCase()
-    return ${fields.map(f => `item.${String(f)}?.toString().toLowerCase().includes(searchLower)`).join(' || ')}
-  })
-` : '  const filteredItems = items'}
+${conditional(enableSearch, `
+// Filter by search
+const filteredItems = items.filter(item => {
+if (!search) return true
+const searchLower = search.toLowerCase()
+return ${fields.map(f => `item.${String(f)}?.toString().toLowerCase().includes(searchLower)`).join(' || ')}
+})`)}
 
-${enableSort ? `\
-  // Sort items
-  const sortedItems = [...filteredItems].sort((a, b) => {
-    if (!sortField) return 0
-    const aVal = a[sortField]
-    const bVal = b[sortField]
-    const direction = sortDirection === 'asc' ? 1 : -1
-    if (aVal < bVal) return -1 * direction
-    if (aVal > bVal) return 1 * direction
-    return 0
-  })
-` : '  const sortedItems = filteredItems'}
+${conditional(!enableSearch, '  const filteredItems = items')}
 
-${virtualScrolling ? `\
-  // Virtual scrolling
-  const rowVirtualizer = useVirtualizer({
-    count: sortedItems.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => 50,
+${conditional(enableSort, `
+// Sort items
+const sortedItems = [...filteredItems].sort((a, b) => {
+if (!sortField) return 0
+const aVal = a[sortField]
+const bVal = b[sortField]
+const direction = sortDirection === 'asc' ? 1 : -1
+if (aVal < bVal) return -1 * direction
+if (aVal > bVal) return 1 * direction
+  return 0
+  })`)}
+
+${conditional(!enableSort, '  const sortedItems = filteredItems')}
+
+${conditional(virtualScrolling, `
+// Virtual scrolling
+const rowVirtualizer = useVirtualizer({
+count: sortedItems.length,
+getScrollElement: () => parentRef.current,
+  estimateSize: () => 50,
     overscan: 5,
-  })
-` : ''}
+  })`)}
 
-  if (isLoading) return <div>Loading ${pluralName}...</div>
+if (isLoading) return <div>Loading ${pluralName}...</div>
   if (error) return <div>Error loading ${pluralName}</div>
 
   return (
@@ -89,17 +91,16 @@ ${virtualScrolling ? `\
         <div className="text-sm text-gray-600">{sortedItems.length} items</div>
       </div>
 
-${enableSearch ? `\
+${conditional(enableSearch, `
       <input
         type="search"
         placeholder="Search ${pluralName}..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         className="w-full px-4 py-2 border rounded-lg"
-      />
-` : ''}
+      />`)}
 
-${virtualScrolling ? `\
+${conditional(virtualScrolling, `
       <div ref={parentRef} className="h-[600px] overflow-auto border rounded-lg">
         <div
           style={{
@@ -128,29 +129,28 @@ ${virtualScrolling ? `\
                   <div className="font-medium">{item.${String(fields[0])}}</div>
                 </div>
                 <div className="flex gap-2">
-                  {onEdit && (
-                    <button
-                      onClick={() => onEdit(item)}
-                      className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
-                    >
-                      Edit
-                    </button>
-                  )}
-                  {onDelete && (
-                    <button
-                      onClick={() => onDelete(item)}
-                      className="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600"
-                    >
-                      Delete
-                    </button>
-                  )}
+                  ${conditional(!!onEdit, `
+                  <button
+                    onClick={() => onEdit(item)}
+                    className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
+                  >
+                    Edit
+                  </button>`)}
+                  ${conditional(!!onDelete, `
+                  <button
+                    onClick={() => onDelete(item)}
+                    className="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600"
+                  >
+                    Delete
+                  </button>`)}
                 </div>
               </div>
             )
           })}
         </div>
-      </div>
-` : `\
+      </div>`)}
+
+${conditional(!virtualScrolling, `
       <div className="space-y-2">
         {sortedItems.map((item, index) => (
           <div
@@ -161,27 +161,24 @@ ${virtualScrolling ? `\
               <div className="font-medium">{item.${String(fields[0])}}</div>
             </div>
             <div className="flex gap-2">
-              {onEdit && (
-                <button
-                  onClick={() => onEdit(item)}
-                  className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
-                >
-                  Edit
-                </button>
-              )}
-              {onDelete && (
-                <button
-                  onClick={() => onDelete(item)}
-                  className="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600"
-                >
-                  Delete
-                </button>
-              )}
+              ${conditional(!!onEdit, `
+              <button
+                onClick={() => onEdit(item)}
+                className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
+              >
+                Edit
+              </button>`)}
+              ${conditional(!!onDelete, `
+              <button
+                onClick={() => onDelete(item)}
+                className="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600"
+              >
+                Delete
+              </button>`)}
             </div>
           </div>
         ))}
-      </div>
-`}
+      </div>`)}
     </div>
   )
 }

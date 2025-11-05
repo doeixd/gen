@@ -39,6 +39,13 @@ export const defaultTypeMappings: Record<string, Partial<FieldMapping<any>>> = {
     defaultValue: '',
     jsType: 'string',
   },
+  date: {
+    inputComponent: 'TextField' as any,
+    displayComponent: 'DateTime' as any,
+    standardSchema: validators.string, // Could be a date validator
+    defaultValue: '',
+    jsType: 'string',
+  },
   array: {
     inputComponent: 'TextField' as any,
     displayComponent: 'List' as any,
@@ -202,25 +209,16 @@ export const tableFieldOverrides: TableFieldOverrides = {
 }
 
 /**
- * Fields to exclude from forms (auto-generated or system fields)
- */
-export const excludeFromForms: string[] = [
-  'id',
-  '_id',
-  '_creationTime',
-  'createdAt',
-  'updatedAt',
-]
+* Fields to exclude from forms (auto-generated or system fields)
+* Organized by table name for flexibility
+*/
+const _excludeFromForms: Record<string, string[]> = {}
 
 /**
  * Fields to exclude from list/table views
- */
-export const excludeFromList: string[] = [
-  '_id',
-  'description',
-  'content',
-  'bio',
-]
+ * Organized by table name for flexibility
+*/
+const _excludeFromList: Record<string, string[]> = {}
 
 /**
  * Table display configuration
@@ -287,6 +285,16 @@ export function resolveFieldConfig<T = unknown>(
   // Handle optional fields
   if (isOptional && config.standardSchema) {
     config.standardSchema = validators.optional(config.standardSchema as any) as any
+  }
+
+  // Set exclusion flags
+  const excludeFromForms = isExcludedFromForms(tableName, fieldName)
+  const excludeFromList = isExcludedFromList(tableName, fieldName)
+  if (excludeFromForms) {
+    config.excludeFromForms = true
+  }
+  if (excludeFromList) {
+    config.excludeFromList = true
   }
 
   return config as FieldMapping<T>
@@ -360,4 +368,40 @@ export function addFieldPattern(
   mapping: Partial<FieldMapping<any>>
 ): void {
   fieldNamePatterns[pattern] = mapping
+}
+
+/**
+ * Exclude fields from forms (legacy function name)
+ */
+export function excludeFromForms(tableName: string, fields: string[]): void {
+  if (!_excludeFromForms[tableName]) {
+    _excludeFromForms[tableName] = []
+  }
+  _excludeFromForms[tableName].push(...fields)
+}
+
+/**
+ * Exclude fields from list views (legacy function name)
+ */
+export function excludeFromList(tableName: string, fields: string[]): void {
+  if (!_excludeFromList[tableName]) {
+    _excludeFromList[tableName] = []
+  }
+  _excludeFromList[tableName].push(...fields)
+}
+
+/**
+* Check if a field should be excluded from forms
+*/
+function isExcludedFromForms(tableName: string, fieldName: string): boolean {
+const tableExclusions = _excludeFromForms[tableName] || []
+return tableExclusions.includes(fieldName)
+}
+
+/**
+ * Check if a field should be excluded from list views
+*/
+function isExcludedFromList(tableName: string, fieldName: string): boolean {
+  const tableExclusions = _excludeFromList[tableName] || []
+return tableExclusions.includes(fieldName)
 }

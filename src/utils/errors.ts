@@ -12,6 +12,13 @@ export enum GeneratorErrorCode {
   VALIDATION_ERROR = 'VALIDATION_ERROR',
 }
 
+export enum CLIErrorCode {
+  CONFIG_ERROR = 'CONFIG_ERROR',
+  PLUGIN_ERROR = 'PLUGIN_ERROR',
+  COMMAND_ERROR = 'COMMAND_ERROR',
+  INVALID_PLUGIN = 'INVALID_PLUGIN',
+}
+
 export class GeneratorError extends Error {
   public readonly code: GeneratorErrorCode
   public readonly details?: Record<string, any>
@@ -25,6 +32,25 @@ export class GeneratorError extends Error {
   ) {
     super(message)
     this.name = 'GeneratorError'
+    this.code = code
+    this.details = details
+    this.cause = cause
+  }
+}
+
+export class CLIError extends Error {
+  public readonly code: CLIErrorCode
+  public readonly details?: Record<string, any>
+  public readonly cause?: Error
+
+  constructor(
+    code: CLIErrorCode,
+    message: string,
+    details?: Record<string, any>,
+    cause?: Error
+  ) {
+    super(message)
+    this.name = 'CLIError'
     this.code = code
     this.details = details
     this.cause = cause

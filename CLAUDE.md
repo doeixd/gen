@@ -25,9 +25,39 @@ npm run dev
 
 # Clean build artifacts
 npm run clean
+
+# CLI commands
+npm run gen -- --help           # Show CLI help
+npm run gen -- init my-project  # Initialize new project
+npm run gen -- generate         # Generate code
 ```
 
 This project uses **Pridepack** as the build tool, which handles TypeScript compilation, bundling, and development workflows.
+
+## CLI Architecture
+
+The CLI has been significantly enhanced with:
+
+### 1. Multi-Command System (`src/cli/`)
+- **`index.ts`** - Main CLI entry point with plugin loading
+- **`commands/`** - Individual command implementations
+  - `generate.ts` - Code generation with custom generators
+  - `init.ts` - Project initialization
+  - `plugin.ts` - Plugin management
+  - `config.ts` - Configuration management
+- **`plugins/`** - Plugin loading and management system
+
+### 2. Plugin Architecture
+- **Extensible command system** - Add custom commands via plugins
+- **Custom generators** - Override or extend built-in generators
+- **Hook system** - Pre/post generation hooks
+- **NPM integration** - Install plugins from npm registry
+
+### 3. Enhanced Features
+- **Project templates** - Multiple starter templates (basic, convex, express, fullstack)
+- **Preset configurations** - Reusable configuration presets
+- **Advanced CLI options** - Watch mode, incremental generation, custom output paths
+- **Plugin marketplace** - Ecosystem of community plugins
 
 ## Core Architecture
 
@@ -109,6 +139,45 @@ Provides smart defaults and configuration helpers:
 - **`createEntity()`**: Creates entities with sensible defaults
 - **`createRelationship()`**: Helper for defining relationships
 
+### 8. Tagged Template System (`src/tags.ts`)
+
+Provides specialized tagged template functions for enhanced syntax highlighting and better developer experience:
+
+- **`html()`**: For HTML/JSX content with proper syntax highlighting
+- **`css()`**: For CSS content with highlighting
+- **`ts()`**: For TypeScript/JavaScript code
+- **`sql()`**: For SQL queries with highlighting
+- **`gql()`**: For GraphQL queries and mutations
+- **`json()`**: For JSON data with highlighting
+- **`yaml()`**: For YAML configuration files
+- **`md()`**: For Markdown documentation
+- **`code(language)`**: Dynamic language-specific templates
+- **`conditional(condition, content)`**: Helper for conditional template inclusion
+- **`map(items, mapper)`**: Helper for mapping arrays to template content
+
+**Usage Example:**
+```typescript
+import { html, sql, conditional, map } from './tags'
+
+// HTML template with proper highlighting
+const component = html`
+  <div className="user-list">
+    <h1>Users</h1>
+    ${conditional(showFilters, `<div className="filters">...</div>`)}
+    <ul>
+      ${map(users, user => `<li>${user.name}</li>`)}
+    </ul>
+  </div>
+`
+
+// SQL template with highlighting
+const query = sql`
+  SELECT * FROM users WHERE active = true ORDER BY created_at DESC
+`
+```
+
+**VS Code Extension:** Install `schoero.tagged-template-syntax-highlighting` for proper syntax highlighting support.
+
 ## Key Patterns
 
 ### Creating an Entity
@@ -154,18 +223,38 @@ The `validators` object provides StandardSchema-compatible validators (Zod-based
 
 ```
 src/
-├── components.ts       # Component registry system
-├── database.ts         # Database type abstractions
-├── entity.ts          # Core Entity type definition
-├── helpers.ts         # Utilities and smart defaults
-├── mutations.ts       # Mutation system with audit trail
-├── permissions.ts     # Multi-level permission system
-├── validators.ts      # StandardSchema validators
-├── index.ts          # Public API exports
-└── generators/
-    ├── api.ts        # API code generation
-    ├── database.ts   # Database schema generation
-    └── frontend.ts   # Frontend component generation
+├── cli/                    # Command-line interface
+│   ├── index.ts           # Main CLI entry point
+│   ├── commands/          # CLI command implementations
+│   │   ├── generate.ts    # Code generation command
+│   │   ├── init.ts        # Project initialization
+│   │   ├── plugin.ts      # Plugin management
+│   │   └── config.ts      # Configuration management
+│   └── plugins/           # Plugin loading system
+│       └── index.ts       # Plugin loader
+├── components.ts          # Component registry system
+├── database.ts            # Database type abstractions
+├── entity.ts             # Core Entity type definition
+├── helpers.ts            # Utilities and smart defaults
+├── mutations.ts          # Mutation system with audit trail
+├── permissions.ts        # Multi-level permission system
+├── validators.ts         # StandardSchema validators
+├── tags.ts              # Tagged template functions for syntax highlighting
+├── utils/               # Utility functions
+│   ├── config.ts         # Configuration management
+│   ├── errors.ts         # Error handling
+│   ├── file-system.ts    # File operations
+│   ├── logger.ts         # Logging
+│   ├── schema-parser.ts  # Schema parsing
+│   └── zod-codegen.ts    # Zod code generation
+├── field-mappings.config.ts  # Field mapping configuration
+├── generator-interfaces.ts   # Generator interfaces
+├── builders.ts          # Entity builders
+├── index.ts            # Public API exports
+└── generators/         # Code generators
+    ├── api.ts          # API code generation
+    ├── database.ts     # Database schema generation
+    └── frontend.ts     # Frontend component generation
 ```
 
 ## Type System
@@ -219,7 +308,7 @@ The `old/` directory contains a previous Convex-specific implementation that ser
 
 4. **CLI Options**: Supports `--dry-run`, `--backup`, `--verbose`, `--incremental`, `--tables`, `--force`
 
-5. **Template Generation**: Uses string templates with placeholder interpolation for code generation
+5. **Template Generation**: Uses tagged template functions with syntax highlighting support for code generation
 
 ### Using old/ as Reference
 

@@ -28,6 +28,14 @@
 
 ### 🔄 Versioned Mutation System
 - **Audited Operations**: Full audit trail tracking who, when, and what changed
+
+### 🚨 Comprehensive Error System
+- **Type-Safe Errors**: 100% type-safe error handling with no magic strings
+- **Flexible Paradigms**: Supports both throwing exceptions AND returning Result types
+- **Extensible Registry**: Register custom error classes while using sensible defaults
+- **Rich Error Catalog**: 25+ predefined errors with recovery suggestions across 11 categories
+- **Framework Integration**: Works with Express, Fastify, and custom error handling patterns
+- **Advanced Utilities**: Retry logic, error boundaries, HTTP status mapping, and batch processing
 - **Rollback Support**: Versioned mutations with rollback capabilities
 - **Lifecycle Hooks**: Before/after create, update, delete hooks
 - **Input/Output Validation**: StandardSchema-compatible validation
@@ -37,7 +45,8 @@
 - **CLI Tool**: Powerful command-line interface with dry-run, backup, and incremental generation
 - **Custom Generators**: Extensible system for custom code generation
 - **Configuration System**: Flexible configuration with smart defaults and overrides
-- **Error Handling**: Comprehensive error handling with neverthrow Result types
+- **Advanced Error System**: See [Error System Documentation](./ERROR_SYSTEM.md) for comprehensive error handling
+- **Tagged Template System**: Enhanced syntax highlighting with language-specific tagged templates (HTML, CSS, SQL, TypeScript, etc.)
 
 ## 🚀 Quick Start
 
@@ -272,28 +281,395 @@ gen --targets=frontend --include-forms --include-tables
     │       └── edit.tsx
 ```
 
+## 🏷️ Tagged Template System
+
+Gen uses specialized tagged template functions for enhanced syntax highlighting and better developer experience when writing code generators.
+
+### Language-Specific Templates
+
+```typescript
+import { html, css, sql, ts, gql, json, yaml, md } from 'gen'
+
+// HTML/JSX templates with proper highlighting
+const componentTemplate = html`
+  <div className="user-card">
+    <h2>{user.name}</h2>
+    <p>{user.email}</p>
+    <button onClick={handleEdit}>Edit</button>
+  </div>
+`
+
+// CSS templates with highlighting
+const stylesTemplate = css`
+  .user-card {
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 1rem;
+  }
+
+  .user-card h2 {
+    color: #333;
+    margin-bottom: 0.5rem;
+  }
+`
+
+// SQL templates with highlighting
+const queryTemplate = sql`
+  SELECT u.id, u.name, u.email, p.title as role
+  FROM users u
+  LEFT JOIN user_permissions p ON u.id = p.user_id
+  WHERE u.active = true
+  ORDER BY u.created_at DESC
+`
+
+// TypeScript templates with highlighting
+const typeTemplate = ts`
+  export interface User {
+    id: string
+    name: string
+    email: string
+    role: 'user' | 'admin' | 'superadmin'
+    createdAt: Date
+  }
+
+  export function validateUser(user: User): boolean {
+    return user.name.length > 0 && user.email.includes('@')
+  }
+`
+
+// GraphQL templates with highlighting
+const graphqlTemplate = gql`
+  query GetUsers($limit: Int, $offset: Int) {
+    users(limit: $limit, offset: $offset) {
+      id
+      name
+      email
+      role
+      createdAt
+    }
+  }
+
+  mutation UpdateUser($id: ID!, $input: UpdateUserInput!) {
+    updateUser(id: $id, input: $input) {
+      id
+      name
+      email
+    }
+  }
+`
+
+// JSON templates with highlighting
+const configTemplate = json`
+  {
+    "database": {
+      "host": "localhost",
+      "port": 5432,
+      "name": "myapp"
+    },
+    "features": {
+      "authentication": true,
+      "fileUploads": false
+    }
+  }
+`
+
+// YAML templates with highlighting
+const dockerTemplate = yaml`
+  version: '3.8'
+  services:
+    app:
+      build: .
+      ports:
+        - "3000:3000"
+      environment:
+        - NODE_ENV=production
+      depends_on:
+        - db
+
+    db:
+      image: postgres:13
+      environment:
+        POSTGRES_DB: myapp
+`
+
+// Markdown templates with highlighting
+const readmeTemplate = md`
+  # My Project
+
+  This is a sample project generated with Gen.
+
+  ## Features
+
+  - User authentication
+  - Role-based permissions
+  - CRUD operations
+  - Type-safe throughout
+
+  ## Getting Started
+
+  \`\`\`bash
+  npm install
+  npm run dev
+  \`\`\`
+`
+```
+
+### Dynamic Language Templates
+
+For dynamic language selection, use the `code()` function:
+
+```typescript
+import { code } from 'gen'
+
+// Generate code with specific language hints
+const pythonCode = code('python')`
+def calculate_fibonacci(n):
+    if n <= 1:
+        return n
+    return calculate_fibonacci(n-1) + calculate_fibonacci(n-2)
+
+print(calculate_fibonacci(10))
+`
+
+const rustCode = code('rust')`
+fn main() {
+    println!("Hello, world!");
+    let x = 42;
+    println!("The answer is: {}", x);
+}
+`
+```
+
+### Template Utilities
+
+```typescript
+import { conditional, map } from 'gen'
+
+// Conditional template inclusion
+const formTemplate = html`
+  <form>
+    <input type="text" name="username" required />
+    ${conditional(showPassword, `<input type="password" name="password" required />`)}
+    <button type="submit">Login</button>
+  </form>
+`
+
+// Mapping arrays to template content
+const listTemplate = html`
+  <ul>
+    ${map(items, (item) => `<li>${item.name} - $${item.price}</li>`)}
+  </ul>
+`
+```
+
+### VS Code Extension
+
+For the best syntax highlighting experience, install the **Tagged Template Syntax Highlighting** extension:
+
+- **Extension ID:** `schoero.tagged-template-syntax-highlighting`
+- **Install:** `ext install schoero.tagged-template-syntax-highlighting`
+
+This extension recognizes the tagged template functions and provides proper syntax highlighting for the embedded content in each template type.
+
+## 🛤️ Advanced Generators
+
+Gen provides specialized generators for different frameworks and use cases:
+
+### Rails-Style Routes Generator
+
+Generate RESTful API routes similar to Ruby on Rails:
+
+```bash
+gen generate --targets=rails
+```
+
+**Features:**
+- RESTful routes (index, show, create, update, destroy)
+- Middleware support
+- Validation integration
+- Error handling
+- TypeScript types
+
+### Next.js API Routes Generator
+
+Generate Next.js 13+ App Router API routes:
+
+```bash
+gen generate --targets=nextjs
+```
+
+**Features:**
+- App Router compatible (`app/api/` structure)
+- Pagination, filtering, and sorting
+- Zod validation integration
+- TypeScript throughout
+- Server-side rendering support
+
+### OpenAPI Documentation Generator
+
+Generate OpenAPI 3.0 specifications for API documentation:
+
+```bash
+gen generate --targets=openapi
+```
+
+**Features:**
+- Complete OpenAPI 3.0 spec
+- Automatic schema generation
+- Authentication support
+- Pagination metadata
+- Interactive API docs (with Swagger UI)
+
+### Testing Suite Generator
+
+Generate comprehensive test suites:
+
+```bash
+gen generate --targets=tests
+```
+
+**Generates:**
+- Unit tests (service layer)
+- Integration tests (API endpoints)
+- E2E tests (Playwright)
+- Test data factories (Faker.js)
+- Mock utilities
+
+### Deployment Configuration Generator
+
+Generate deployment configurations for various platforms:
+
+```bash
+gen generate --targets=deployment
+```
+
+**Generates:**
+- Docker Compose files
+- Dockerfiles
+- CI/CD pipelines (GitHub Actions)
+- Environment configurations
+- Nginx configurations
+- Kubernetes manifests
+
+## 🔌 Plugin System
+
+Gen supports a powerful plugin architecture that allows you to extend functionality with custom generators, commands, and integrations.
+
+### Installing Plugins
+
+```bash
+# Install a plugin
+gen plugin install gen-plugin-react
+
+# Install globally
+gen plugin install --global gen-plugin-database
+
+# List installed plugins
+gen plugin list
+```
+
+### Creating Plugins
+
+```bash
+# Create a new plugin
+gen plugin create my-plugin --template=generator
+
+# Create a command plugin
+gen plugin create my-command --template=command
+```
+
+### Plugin API
+
+```typescript
+// plugin/index.ts
+export default {
+  name: 'my-plugin',
+  version: '1.0.0',
+  generators: {
+    myGenerator: async (args) => {
+      // Custom generation logic
+    }
+  },
+  commands: {
+    myCommand: createCommand('my-command')
+      .description('My custom command')
+      .action(() => {
+        // Command logic
+      })
+  }
+}
+```
+
 ## 🖥️ CLI Usage
+
+### Available Commands
+
+```bash
+gen init [project-name]     # Initialize a new project
+gen generate [targets...]   # Generate code from entities
+gen plugin <command>        # Manage plugins
+gen config <command>        # Manage configuration
+gen --help                  # Show help
+gen --version               # Show version
+```
 
 ### Basic Commands
 
 ```bash
+# Initialize a new project
+gen init my-project
+gen init --template=convex
+
 # Generate all targets
-gen
+gen generate
 
 # Generate specific targets
-gen --targets=database,api
+gen generate --targets=database,api,frontend
+
+# Generate Convex-specific code
+gen generate --targets=convex,crud,forms
+
+# Generate Rails-style routes
+gen generate --targets=rails
+
+# Generate Next.js API routes
+gen generate --targets=nextjs
+
+# Generate OpenAPI documentation
+gen generate --targets=openapi
+
+# Generate deployment configs
+gen generate --targets=deployment
 
 # Dry run (preview changes)
-gen --dry-run
+gen generate --dry-run
 
 # Backup existing files
-gen --backup
+gen generate --backup
 
 # Incremental generation (skip existing)
-gen --incremental
+gen generate --incremental
 
 # Verbose logging
 gen --verbose
+```
+
+### Target Options
+
+```bash
+# Database targets
+gen --targets=drizzle,prisma,sql,convex
+
+# API targets
+gen --targets=express,fastify,hono,koa
+
+# Frontend targets
+gen --targets=react,vue,svelte
+
+# New comprehensive targets
+gen --targets=crud        # Complete CRUD routes with TanStack Router
+gen --targets=convex      # Convex functions (queries & mutations)
+gen --targets=forms       # TanStack Form components
 ```
 
 ### Configuration Options

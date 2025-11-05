@@ -27,12 +27,36 @@ export interface ValidationResult {
   }>
 }
 
-// Create a function that works like a schema
+// Create enhanced string validator with additional methods
 const stringSchema = z.string()
-const stringValidator = (() => z.string()) as any
-stringValidator.parse = stringSchema.parse.bind(stringSchema)
-stringValidator.safeParse = stringSchema.safeParse.bind(stringSchema)
-stringValidator.optional = () => stringSchema.optional()
+const stringValidator = Object.assign(
+  () => z.string(),
+  {
+    parse: stringSchema.parse.bind(stringSchema),
+    safeParse: stringSchema.safeParse.bind(stringSchema),
+    optional: () => z.string().optional(),
+    nullable: () => z.string().nullable(),
+    nullish: () => z.string().nullish(),
+    regex: (pattern: RegExp, message?: string) =>
+      z.string().regex(pattern, message || 'Invalid format'),
+    email: (message?: string) =>
+      z.string().email(message || 'Invalid email address'),
+    url: (message?: string) =>
+      z.string().url(message || 'Invalid URL'),
+    uuid: (message?: string) =>
+      z.string().uuid(message || 'Invalid UUID'),
+    min: (min: number, message?: string) =>
+      z.string().min(min, message || `Must be at least ${min} characters`),
+    max: (max: number, message?: string) =>
+      z.string().max(max, message || `Must be at most ${max} characters`),
+    refine: (refinement: (val: string) => boolean | Promise<boolean>, message?: string) =>
+      z.string().refine(refinement, message),
+    transform: (transform: (val: string) => any) =>
+      z.string().transform(transform),
+    default: (value: string | (() => string)) =>
+      z.string().default(value),
+  }
+)
 
 /**
  * Standard Schema validators using Zod
@@ -69,7 +93,8 @@ export const validators = {
   // Arrays
   stringArray: z.array(z.string()) as StandardSchema<string[]>,
   numberArray: z.array(z.number()) as StandardSchema<number[]>,
-  array: <T extends z.ZodType>(schema: T) => z.array(schema) as StandardSchema<z.infer<T>[]>,
+  array: <T extends z.ZodType>(schema: T) =>
+    z.array(schema) as StandardSchema<z.infer<T>[]>,
   arrayMin: <T extends z.ZodType>(schema: T, min: number) =>
     z.array(schema).min(min) as StandardSchema<z.infer<T>[]>,
 
@@ -81,8 +106,14 @@ export const validators = {
     z.union(schemas) as StandardSchema<z.infer<T[number]>>,
 
   // Enums
-  enum: <T extends readonly [string, ...string[]]>(values: T) =>
-    z.enum(values) as StandardSchema<T[number]>,
+  enum: <T extends readonly (string | number)[]>(values: T) => {
+    // Check if all values are strings
+    if (values.every(v => typeof v === 'string')) {
+      return z.enum(values as readonly [string, ...string[]]) as StandardSchema<T[number]>
+    }
+    // For numeric or mixed enums, use union of literals
+    return z.union(values.map(v => z.literal(v))) as StandardSchema<T[number]>
+  },
   nativeEnum: <T extends Record<string, string | number>>(enumObj: T) =>
     z.nativeEnum(enumObj) as StandardSchema<T[keyof T]>,
 
@@ -102,9 +133,9 @@ export const validators = {
   },
 
   // Date validators
-  date: z.date() as StandardSchema<Date>,
-  dateMin: (min: Date) => z.date().min(min) as StandardSchema<Date>,
-  dateMax: (max: Date) => z.date().max(max) as StandardSchema<Date>,
+  date: z.coerce.date() as StandardSchema<Date>,
+  dateMin: (min: Date) => z.coerce.date().min(min) as StandardSchema<Date>,
+  dateMax: (max: Date) => z.coerce.date().max(max) as StandardSchema<Date>,
   isoDate: z.string().datetime() as StandardSchema<string>,
 
   // Price/Currency

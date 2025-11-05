@@ -14,23 +14,23 @@ export function getFieldNames<T>(entity: Entity<T>): Array<keyof T> {
 }
 
 /**
- * Get sortable fields from an entity
- */
+* Get sortable fields from an entity
+*/
 export function getSortableFields<T>(entity: Entity<T>): Array<keyof T> {
-  return getFieldNames(entity).filter(name => {
-    const field = entity.fields[name]
-    return field.sortable !== false
-  })
+return getFieldNames(entity).filter(name => {
+const field = entity.fields[name]
+return field.sortable === true
+})
 }
 
 /**
- * Get filterable fields from an entity
- */
+* Get filterable fields from an entity
+*/
 export function getFilterableFields<T>(entity: Entity<T>): Array<keyof T> {
-  return getFieldNames(entity).filter(name => {
-    const field = entity.fields[name]
-    return field.filterable !== false
-  })
+return getFieldNames(entity).filter(name => {
+const field = entity.fields[name]
+return field.filterable === true
+})
 }
 
 /**
@@ -55,28 +55,55 @@ export function getRequiredFields<T>(entity: Entity<T>): Array<keyof T> {
 }
 
 /**
- * Get optional fields from an entity
- */
+* Get optional fields from an entity
+*/
 export function getOptionalFields<T>(entity: Entity<T>): Array<keyof T> {
-  return getFieldNames(entity).filter(name => {
-    const field = entity.fields[name]
-    const dbColumn = entity.db.columns[name]
-    return field.optional || !!(dbColumn as DbColumn)?.nullable
-  })
+return getFieldNames(entity).filter(name => {
+const field = entity.fields[name]
+const dbColumn = entity.db.columns[name]
+// Check if field is marked as optional
+if (field.optional) {
+return true
+}
+// Check if column is nullable
+if ((dbColumn as DbColumn)?.nullable) {
+return true
+}
+// Check if validator has optional() called on it
+if (field.standardSchema && typeof field.standardSchema === 'object') {
+  const schema = field.standardSchema as any
+  if (schema._def && schema._def.typeName === 'ZodOptional') {
+    return true
+  }
+// Also check for nullable
+if (schema._def && schema._def.typeName === 'ZodNullable') {
+return true
+}
+}
+return false
+})
 }
 
 /**
- * Generate default values for an entity
- */
+* Generate default values for an entity
+*/
 export function getDefaultValues<T>(entity: Entity<T>): Partial<T> {
-  const defaults: any = {}
+const defaults: any = {}
 
-  for (const fieldName of getFieldNames(entity)) {
-    const field = entity.fields[fieldName]
-    if (field.defaultValue !== undefined) {
-      defaults[fieldName] = typeof field.defaultValue === 'function'
-        ? (field.defaultValue as Function)()
-        : field.defaultValue
+for (const fieldName of getFieldNames(entity)) {
+const field = entity.fields[fieldName]
+// Check explicit defaultValue first
+if (field.defaultValue !== undefined) {
+defaults[fieldName] = typeof field.defaultValue === 'function'
+? (field.defaultValue as Function)()
+    : field.defaultValue
+  }
+    // Check if validator has a default
+  else if (field.standardSchema && typeof field.standardSchema === 'object') {
+      const schema = field.standardSchema as any
+      if (schema._def && schema._def.typeName === 'ZodDefault') {
+        defaults[fieldName] = schema._def.defaultValue()
+      }
     }
   }
 
@@ -166,22 +193,46 @@ export function getPrimaryKeyFields<T>(entity: Entity<T>): string[] {
 }
 
 /**
- * Get unique fields
- */
+* Get unique fields
+*/
 export function getUniqueFields<T>(entity: Entity<T>): Array<keyof T> {
-  return getFieldNames(entity).filter(name => {
-    const dbColumn = entity.db.columns[name] as DbColumn
-    return dbColumn?.unique === true
+return getFieldNames(entity).filter(name => {
+const dbColumn = entity.db.columns[name] as DbColumn
+// Check if column is marked as unique
+if (dbColumn?.unique === true) {
+return true
+}
+// Check if column type has unique modifier
+if ((dbColumn?.type as any)?._modifiers?.unique === true) {
+return true
+}
+// Check if field is part of a unique index
+if (entity.db.indexes) {
+  return entity.db.indexes.some(index =>
+      index.unique && index.columns.includes(name as string)
+      )
+    }
+    return false
   })
 }
 
 /**
- * Get indexed fields
- */
+* Get indexed fields
+*/
 export function getIndexedFields<T>(entity: Entity<T>): Array<keyof T> {
-  return getFieldNames(entity).filter(name => {
-    const dbColumn = entity.db.columns[name] as DbColumn
-    return dbColumn?.indexed === true
+return getFieldNames(entity).filter(name => {
+const dbColumn = entity.db.columns[name] as DbColumn
+// Check if column is marked as indexed
+  if (dbColumn?.indexed === true) {
+      return true
+    }
+    // Check if field is part of any index
+    if (entity.db.indexes) {
+      return entity.db.indexes.some(index =>
+        index.columns.includes(name as string)
+      )
+    }
+    return false
   })
 }
 
@@ -267,13 +318,34 @@ export function camelToPascal(str: string): string {
 }
 
 /**
- * Pluralize a word (simple English rules)
- */
+* Pluralize a word (simple English rules)
+*/
 export function pluralize(word: string): string {
-  if (word.endsWith('y')) {
-    return word.slice(0, -1) + 'ies'
+// If already plural (ends with s), return as-is
+if (word.endsWith('s')) {
+return word
+}
+
+// Handle irregular cases
+const irregular: Record<string, string> = {
+'person': 'people',
+'man': 'men',
+'woman': 'women',
+  'child': 'children',
+    'foot': 'feet',
+  'tooth': 'teeth',
+'mouse': 'mice',
+  'goose': 'geese'
   }
-  if (word.endsWith('s') || word.endsWith('sh') || word.endsWith('ch')) {
+
+if (irregular[word]) {
+  return irregular[word]
+}
+
+if (word.endsWith('y') && !word.endsWith('ay') && !word.endsWith('ey') && !word.endsWith('iy') && !word.endsWith('oy') && !word.endsWith('uy')) {
+  return word.slice(0, -1) + 'ies'
+  }
+  if (word.endsWith('s') || word.endsWith('sh') || word.endsWith('ch') || word.endsWith('x') || word.endsWith('z')) {
     return word + 'es'
   }
   return word + 's'
@@ -283,13 +355,29 @@ export function pluralize(word: string): string {
  * Singularize a word (simple English rules)
  */
 export function singularize(word: string): string {
+  // Handle irregular cases
+  const irregular: Record<string, string> = {
+    'people': 'person',
+    'men': 'man',
+    'women': 'woman',
+    'children': 'child',
+    'feet': 'foot',
+    'teeth': 'tooth',
+    'mice': 'mouse',
+    'geese': 'goose'
+  }
+
+  if (irregular[word]) {
+    return irregular[word]
+  }
+
   if (word.endsWith('ies')) {
     return word.slice(0, -3) + 'y'
   }
-  if (word.endsWith('ses') || word.endsWith('shes') || word.endsWith('ches')) {
+  if (word.endsWith('ses') || word.endsWith('shes') || word.endsWith('ches') || word.endsWith('xes') || word.endsWith('zes')) {
     return word.slice(0, -2)
   }
-  if (word.endsWith('s')) {
+  if (word.endsWith('s') && !word.endsWith('ss')) {
     return word.slice(0, -1)
   }
   return word
@@ -349,18 +437,18 @@ export function deepMerge<T>(target: T, source: Partial<T>): T {
 }
 
 /**
- * Generate a random ID
+ * Generate a random ID with optional prefix
  */
-export function generateId(): string {
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-    return crypto.randomUUID()
-  }
-  // Fallback for environments without crypto.randomUUID
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
-    const r = (Math.random() * 16) | 0
-    const v = c === 'x' ? r : (r & 0x3) | 0x8
-    return v.toString(16)
-  })
+export function generateId(prefix?: string): string {
+  const uuid = typeof crypto !== 'undefined' && crypto.randomUUID
+    ? crypto.randomUUID()
+    : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+        const r = (Math.random() * 16) | 0
+        const v = c === 'x' ? r : (r & 0x3) | 0x8
+        return v.toString(16)
+      })
+
+  return prefix ? `${prefix}-${uuid}` : uuid
 }
 
 /**

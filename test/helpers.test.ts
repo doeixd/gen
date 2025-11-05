@@ -259,19 +259,14 @@ describe('Helpers', () => {
 
   describe('resolveFieldConfig', () => {
     it('should resolve field config from type mapping', () => {
-      const config = resolveFieldConfig('user', 'name', 'string', {
-        string: () => null,
-      });
+      const config = resolveFieldConfig('user', 'name', 'string', false);
 
       expect(config).toBeDefined();
-      expect(config.component).toBeTruthy();
+      expect(config.inputComponent).toBeTruthy();
     });
 
     it('should resolve field config from field name pattern', () => {
-      const EmailField = ComponentRegistry.get('EmailField')!;
-      const config = resolveFieldConfig('user', 'email', 'string', {
-        string: () => null,
-      });
+      const config = resolveFieldConfig('user', 'email', 'string', false);
 
       expect(config).toBeDefined();
       // Should match email pattern
@@ -282,65 +277,53 @@ describe('Helpers', () => {
       const CustomComponent = () => null;
 
       addTableOverride('user', 'email', {
-        component: CustomComponent,
+        inputComponent: CustomComponent,
       });
 
-      const config = resolveFieldConfig('user', 'email', 'string', {
-        string: () => null,
-      });
+      const config = resolveFieldConfig('user', 'email', 'string', false);
 
-      expect(config.component).toBe(CustomComponent);
+      expect(config.inputComponent).toBe(CustomComponent);
     });
 
     it('should prioritize overrides over patterns', () => {
       const CustomComponent = () => null;
 
       addTableOverride('user', 'email', {
-        component: CustomComponent,
+        inputComponent: CustomComponent,
         standardSchema: validators.string,
       });
 
-      const config = resolveFieldConfig('user', 'email', 'string', {
-        string: () => null,
-      });
+      const config = resolveFieldConfig('user', 'email', 'string', false);
 
-      expect(config.component).toBe(CustomComponent);
+      expect(config.inputComponent).toBe(CustomComponent);
       expect(config.standardSchema).toBe(validators.string);
     });
   });
 
   describe('field patterns', () => {
     it('should recognize email fields', () => {
-      const config = resolveFieldConfig('user', 'email', 'string', {
-        string: () => null,
-      });
+      const config = resolveFieldConfig('user', 'email', 'string', false);
 
       expect(config.standardSchema).toBeTruthy();
       // Email fields should use email validator
     });
 
     it('should recognize date fields', () => {
-      const config = resolveFieldConfig('user', 'createdAt', 'date', {
-        date: () => null,
-      });
+      const config = resolveFieldConfig('user', 'createdAt', 'string', false);
 
-      expect(config.component).toBeTruthy();
+      expect(config.displayComponent).toBeTruthy();
     });
 
     it('should recognize boolean fields', () => {
-      const config = resolveFieldConfig('user', 'isActive', 'boolean', {
-        boolean: () => null,
-      });
+      const config = resolveFieldConfig('user', 'isActive', 'boolean', false);
 
-      expect(config.component).toBeTruthy();
+      expect(config.inputComponent).toBeTruthy();
     });
 
     it('should recognize numeric fields', () => {
-      const config = resolveFieldConfig('product', 'price', 'number', {
-        number: () => null,
-      });
+      const config = resolveFieldConfig('product', 'price', 'number', false);
 
-      expect(config.component).toBeTruthy();
+      expect(config.inputComponent).toBeTruthy();
     });
   });
 
@@ -379,9 +362,7 @@ describe('Helpers', () => {
     it('should mark fields to exclude from forms', () => {
       excludeFromForms('user', ['id', 'createdAt', 'updatedAt']);
 
-      const idConfig = resolveFieldConfig('user', 'id', 'string', {
-        string: () => null,
-      });
+      const idConfig = resolveFieldConfig('user', 'id', 'string', false);
 
       expect(idConfig.excludeFromForms).toBe(true);
     });
@@ -389,9 +370,7 @@ describe('Helpers', () => {
     it('should not affect other tables', () => {
       excludeFromForms('user', ['id']);
 
-      const config = resolveFieldConfig('post', 'id', 'string', {
-        string: () => null,
-      });
+      const config = resolveFieldConfig('post', 'id', 'string', false);
 
       expect(config.excludeFromForms).toBeUndefined();
     });
@@ -401,9 +380,7 @@ describe('Helpers', () => {
     it('should mark fields to exclude from list views', () => {
       excludeFromList('user', ['password', 'secret']);
 
-      const config = resolveFieldConfig('user', 'password', 'string', {
-        string: () => null,
-      });
+      const config = resolveFieldConfig('user', 'password', 'string', false);
 
       expect(config.excludeFromList).toBe(true);
     });
@@ -411,9 +388,7 @@ describe('Helpers', () => {
     it('should preserve form inclusion', () => {
       excludeFromList('user', ['bio']);
 
-      const config = resolveFieldConfig('user', 'bio', 'string', {
-        string: () => null,
-      });
+      const config = resolveFieldConfig('user', 'bio', 'string', false);
 
       expect(config.excludeFromList).toBe(true);
       expect(config.excludeFromForms).toBeUndefined();
@@ -488,14 +463,12 @@ describe('Helpers', () => {
     it('should resolve field configs for entire entity', () => {
       const fields = ['id', 'email', 'name', 'age', 'isActive'];
       const configs = fields.map((field) =>
-        resolveFieldConfig('user', field, 'string', {
-          string: () => null,
-        })
+        resolveFieldConfig('user', field, 'string', false)
       );
 
       expect(configs.length).toBe(fields.length);
       configs.forEach((config) => {
-        expect(config.component).toBeTruthy();
+        expect(config.inputComponent).toBeTruthy();
       });
     });
   });

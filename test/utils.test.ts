@@ -246,7 +246,7 @@ describe('Utility Functions', () => {
         table: { name: 'users', primaryKey: ['id'] },
         columns: {
           id: { type: dbTypes.uuid().primaryKey() },
-          email: { type: dbTypes.string(255).unique() },
+          email: { type: dbTypes.string(255), unique: true },
           name: { type: dbTypes.string(100) },
           age: { type: dbTypes.integer() },
         },
@@ -346,8 +346,9 @@ describe('Utility Functions', () => {
             standardSchema: validators.uuid,
           },
           bio: {
-            component: () => null,
-            standardSchema: validators.string.optional(),
+          component: () => null,
+          standardSchema: validators.string.optional(),
+            optional: true,
           },
         },
       });
@@ -374,8 +375,9 @@ describe('Utility Functions', () => {
             standardSchema: validators.uuid,
           },
           role: {
-            component: () => null,
-            standardSchema: validators.string.default('user'),
+          component: () => null,
+          standardSchema: validators.string.default('user'),
+            defaultValue: 'user',
           },
         },
       });

@@ -43,6 +43,32 @@ import {
   type FieldMapping,
 } from '../field-mappings.config.js'
 
+// Import templates
+import {
+  generateCrudRoutes,
+  generateConvexFunctions,
+  generateTanStackForm,
+  generateRailsRoutes,
+  generateNextJsAPI,
+  generateOpenAPI,
+  generateUnitTests,
+  generateIntegrationTests,
+  generateE2ETests,
+  generateTestDataFactory,
+  generateDockerCompose,
+  generateDockerfile,
+  generateGitHubActions,
+  generateEnvironmentConfig,
+  type CrudRoutesTemplateOptions,
+  type ConvexFunctionsTemplateOptions,
+  type TanStackFormTemplateOptions,
+  type RailsRoutesTemplateOptions,
+  type NextJsAPITemplateOptions,
+  type OpenAPITemplateOptions,
+  type TestingTemplateOptions,
+  type DeploymentTemplateOptions,
+} from '../templates/index.js'
+
 /**
  * Get generator configuration
  */
@@ -77,6 +103,449 @@ function generateZodSchemaCode(field: ParsedField, config: GeneratorConfig): Res
     includeErrorMessages: config.codegen.includeErrorMessages,
     useStandardSchema: config.codegen.useStandardSchema,
   })
+}
+
+/**
+ * Generate CRUD routes for all entities
+ */
+async function generateCrud(args: GeneratorArgs): Promise<Result<void, GeneratorError>> {
+  try {
+    const { config, entities } = args
+    logger.section('🛣️  Generating CRUD Routes')
+
+    // Ensure output directories exist
+    const routesDirResult = ensureDirectory(config.paths.frontend)
+    if (routesDirResult.isErr()) return err(routesDirResult.error)
+
+    for (const entity of entities) {
+      logger.subsection(`Processing ${entity.name.singular}`)
+
+      const crudOptions: CrudRoutesTemplateOptions = {
+        entity,
+        virtualScrolling: true,
+        enableSearch: true,
+        enableSort: true,
+      }
+
+      const crudRoutes = generateCrudRoutes(crudOptions)
+
+      const fileName = `${entity.name.plural}.routes.tsx`
+      const filePath = path.join(config.paths.frontend, fileName)
+
+      const writeResult = writeFile(filePath, crudRoutes, {
+        createDirectories: true,
+        addHeader: config.header.includeHeader,
+        eslintDisable: config.header.eslintDisable,
+      })
+
+      if (writeResult.isErr()) {
+        return err(writeResult.error)
+      }
+
+      logger.success(`Generated ${fileName}`)
+    }
+
+    return ok(undefined)
+  } catch (error) {
+    return err(fromError(error))
+  }
+}
+
+/**
+ * Generate Convex functions for all entities
+ */
+async function generateConvex(args: GeneratorArgs): Promise<Result<void, GeneratorError>> {
+  try {
+    const { config, entities } = args
+    logger.section('⚡ Generating Convex Functions')
+
+    // Ensure output directories exist
+    const convexDirResult = ensureDirectory(path.join(config.paths.backend, 'convex'))
+    if (convexDirResult.isErr()) return err(convexDirResult.error)
+
+    for (const entity of entities) {
+      logger.subsection(`Processing ${entity.name.singular}`)
+
+      const convexOptions: ConvexFunctionsTemplateOptions = {
+        entity,
+      }
+
+      const convexFunctions = generateConvexFunctions(convexOptions)
+
+      const fileName = `${entity.name.plural}.ts`
+      const filePath = path.join(config.paths.backend, 'convex', fileName)
+
+      const writeResult = writeFile(filePath, convexFunctions, {
+        createDirectories: true,
+        addHeader: config.header.includeHeader,
+        eslintDisable: config.header.eslintDisable,
+      })
+
+      if (writeResult.isErr()) {
+        return err(writeResult.error)
+      }
+
+      logger.success(`Generated ${fileName}`)
+    }
+
+    return ok(undefined)
+  } catch (error) {
+    return err(fromError(error))
+  }
+}
+
+/**
+ * Generate forms for all entities
+ */
+async function generateForms(args: GeneratorArgs): Promise<Result<void, GeneratorError>> {
+  try {
+    const { config, entities } = args
+    logger.section('📝 Generating Forms')
+
+    // Ensure output directories exist
+    const formsDirResult = ensureDirectory(path.join(config.paths.frontend, 'components', 'forms'))
+    if (formsDirResult.isErr()) return err(formsDirResult.error)
+
+    for (const entity of entities) {
+      logger.subsection(`Processing ${entity.name.singular}`)
+
+      const formOptions: TanStackFormTemplateOptions = {
+        entity,
+        includeValidation: true,
+        includeErrorHandling: true,
+      }
+
+      const formComponent = generateTanStackForm(formOptions)
+
+      const fileName = `${entity.name.singular}Form.tsx`
+      const filePath = path.join(config.paths.frontend, 'components', 'forms', fileName)
+
+      const writeResult = writeFile(filePath, formComponent, {
+        createDirectories: true,
+        addHeader: config.header.includeHeader,
+        eslintDisable: config.header.eslintDisable,
+      })
+
+      if (writeResult.isErr()) {
+        return err(writeResult.error)
+      }
+
+      logger.success(`Generated ${fileName}`)
+    }
+
+    return ok(undefined)
+  } catch (error) {
+    return err(fromError(error))
+  }
+}
+
+/**
+ * Generate Rails-style routes for all entities
+ */
+async function generateRails(args: GeneratorArgs): Promise<Result<void, GeneratorError>> {
+  try {
+    const { config, entities } = args
+    logger.section('🛤️  Generating Rails Routes')
+
+    // Ensure output directories exist
+    const routesDirResult = ensureDirectory(path.join(config.paths.api, 'routes'))
+    if (routesDirResult.isErr()) return err(routesDirResult.error)
+
+    for (const entity of entities) {
+      logger.subsection(`Processing ${entity.name.singular}`)
+
+      const railsOptions: RailsRoutesTemplateOptions = {
+        entity,
+        framework: 'express',
+        basePath: '/api',
+        includeMiddleware: true,
+        includeValidation: true,
+        includeAuth: false,
+      }
+
+      const railsRoutes = generateRailsRoutes(railsOptions)
+
+      const fileName = `${entity.name.plural}.routes.ts`
+      const filePath = path.join(config.paths.api, 'routes', fileName)
+
+      const writeResult = writeFile(filePath, railsRoutes, {
+        createDirectories: true,
+        addHeader: config.header.includeHeader,
+        eslintDisable: config.header.eslintDisable,
+      })
+
+      if (writeResult.isErr()) {
+        return err(writeResult.error)
+      }
+
+      logger.success(`Generated ${fileName}`)
+    }
+
+    return ok(undefined)
+  } catch (error) {
+    return err(fromError(error))
+  }
+}
+
+/**
+ * Generate Next.js API routes for all entities
+ */
+async function generateNextJs(args: GeneratorArgs): Promise<Result<void, GeneratorError>> {
+  try {
+    const { config, entities } = args
+    logger.section('⚛️  Generating Next.js API Routes')
+
+    // Ensure output directories exist
+    const apiDirResult = ensureDirectory(path.join(config.paths.frontend, 'app', 'api'))
+    if (apiDirResult.isErr()) return err(apiDirResult.error)
+
+    for (const entity of entities) {
+      logger.subsection(`Processing ${entity.name.singular}`)
+
+      const nextJsOptions: NextJsAPITemplateOptions = {
+        entity,
+        includeValidation: true,
+        includeAuth: false,
+        includePagination: true,
+        includeFiltering: true,
+        includeSorting: true,
+      }
+
+      const nextJsAPI = generateNextJsAPI(nextJsOptions)
+
+      // Generate main route file
+      const mainFileName = `${entity.name.plural}/route.ts`
+      const mainFilePath = path.join(config.paths.frontend, 'app', 'api', mainFileName)
+
+      const mainWriteResult = writeFile(mainFilePath, nextJsAPI, {
+        createDirectories: true,
+        addHeader: config.header.includeHeader,
+        eslintDisable: config.header.eslintDisable,
+      })
+
+      if (mainWriteResult.isErr()) {
+        return err(mainWriteResult.error)
+      }
+
+      logger.success(`Generated ${mainFileName}`)
+    }
+
+    return ok(undefined)
+  } catch (error) {
+    return err(fromError(error))
+  }
+}
+
+/**
+ * Generate OpenAPI documentation for all entities
+ */
+async function generateOpenApi(args: GeneratorArgs): Promise<Result<void, GeneratorError>> {
+  try {
+    const { config, entities } = args
+    logger.section('📚 Generating OpenAPI Documentation')
+
+    // Ensure output directories exist
+    const docsDirResult = ensureDirectory(config.paths.docs)
+    if (docsDirResult.isErr()) return err(docsDirResult.error)
+
+    for (const entity of entities) {
+      logger.subsection(`Processing ${entity.name.singular}`)
+
+      const openApiOptions: OpenAPITemplateOptions = {
+        entity,
+        title: `${entity.name.plural} API`,
+        version: '1.0.0',
+        basePath: '/api',
+        includeAuth: false,
+        includePagination: true,
+        includeFiltering: true,
+        includeSorting: true,
+      }
+
+      const openApiSpec = generateOpenAPI(openApiOptions)
+
+      const fileName = `${entity.name.plural}.openapi.json`
+      const filePath = path.join(config.paths.docs, fileName)
+
+      const writeResult = writeFile(filePath, openApiSpec, {
+        createDirectories: true,
+        addHeader: config.header.includeHeader,
+        eslintDisable: config.header.eslintDisable,
+      })
+
+      if (writeResult.isErr()) {
+        return err(writeResult.error)
+      }
+
+      logger.success(`Generated ${fileName}`)
+    }
+
+    return ok(undefined)
+  } catch (error) {
+    return err(fromError(error))
+  }
+}
+
+/**
+ * Generate tests for all entities
+ */
+async function generateTests(args: GeneratorArgs): Promise<Result<void, GeneratorError>> {
+  try {
+    const { config, entities } = args
+    logger.section('🧪 Generating Tests')
+
+    // Ensure output directories exist
+    const testsDirResult = ensureDirectory(config.paths.tests)
+    if (testsDirResult.isErr()) return err(testsDirResult.error)
+
+    for (const entity of entities) {
+      logger.subsection(`Processing ${entity.name.singular}`)
+
+      const testOptions: TestingTemplateOptions = {
+        entity,
+        framework: 'vitest',
+        includeUnitTests: true,
+        includeIntegrationTests: true,
+        includeE2ETests: true,
+        includeMocks: true,
+        testDataFactory: true,
+      }
+
+      // Generate unit tests
+      const unitTests = generateUnitTests(testOptions)
+      const unitTestPath = path.join(config.paths.tests, 'unit', `${entity.name.singular}.unit.test.ts`)
+      const unitWriteResult = writeFile(unitTestPath, unitTests, {
+        createDirectories: true,
+        addHeader: config.header.includeHeader,
+        eslintDisable: config.header.eslintDisable,
+      })
+
+      if (unitWriteResult.isErr()) {
+        return err(unitWriteResult.error)
+      }
+
+      // Generate integration tests
+      const integrationTests = generateIntegrationTests(testOptions)
+      const integrationTestPath = path.join(config.paths.tests, 'integration', `${entity.name.singular}.integration.test.ts`)
+      const integrationWriteResult = writeFile(integrationTestPath, integrationTests, {
+        createDirectories: true,
+        addHeader: config.header.includeHeader,
+        eslintDisable: config.header.eslintDisable,
+      })
+
+      if (integrationWriteResult.isErr()) {
+        return err(integrationWriteResult.error)
+      }
+
+      // Generate E2E tests
+      const e2eTests = generateE2ETests(testOptions)
+      const e2eTestPath = path.join(config.paths.tests, 'e2e', `${entity.name.singular}.e2e.test.ts`)
+      const e2eWriteResult = writeFile(e2eTestPath, e2eTests, {
+        createDirectories: true,
+        addHeader: config.header.includeHeader,
+        eslintDisable: config.header.eslintDisable,
+      })
+
+      if (e2eWriteResult.isErr()) {
+        return err(e2eWriteResult.error)
+      }
+
+      // Generate test data factory
+      const testFactory = generateTestDataFactory(testOptions)
+      const factoryPath = path.join(config.paths.tests, 'factories', `${entity.name.singular}.factory.ts`)
+      const factoryWriteResult = writeFile(factoryPath, testFactory, {
+        createDirectories: true,
+        addHeader: config.header.includeHeader,
+        eslintDisable: config.header.eslintDisable,
+      })
+
+      if (factoryWriteResult.isErr()) {
+        return err(factoryWriteResult.error)
+      }
+
+      logger.success(`Generated test files for ${entity.name.singular}`)
+    }
+
+    return ok(undefined)
+  } catch (error) {
+    return err(fromError(error))
+  }
+}
+
+/**
+ * Generate deployment configurations
+ */
+async function generateDeployment(args: GeneratorArgs): Promise<Result<void, GeneratorError>> {
+  try {
+    const { config } = args
+    logger.section('🚀 Generating Deployment Configurations')
+
+    // Generate Docker Compose
+    const dockerComposeOptions: DeploymentTemplateOptions = {
+      entity: args.entities[0], // Use first entity for base config
+      platform: 'docker',
+      database: 'postgres',
+      environment: 'development',
+      includeCI: true,
+      includeCD: false,
+    }
+
+    const dockerCompose = generateDockerCompose(dockerComposeOptions)
+    const dockerComposePath = 'docker-compose.yml'
+    const dockerComposeWriteResult = writeFile(dockerComposePath, dockerCompose, {
+      addHeader: config.header.includeHeader,
+      eslintDisable: config.header.eslintDisable,
+    })
+
+    if (dockerComposeWriteResult.isErr()) {
+      return err(dockerComposeWriteResult.error)
+    }
+
+    // Generate Dockerfile
+    const dockerfile = generateDockerfile(dockerComposeOptions)
+    const dockerfilePath = 'Dockerfile'
+    const dockerfileWriteResult = writeFile(dockerfilePath, dockerfile, {
+      addHeader: config.header.includeHeader,
+      eslintDisable: config.header.eslintDisable,
+    })
+
+    if (dockerfileWriteResult.isErr()) {
+      return err(dockerfileWriteResult.error)
+    }
+
+    // Generate GitHub Actions
+    const githubActions = generateGitHubActions(dockerComposeOptions)
+    if (githubActions) {
+      const githubActionsPath = '.github/workflows/ci-cd.yml'
+      const githubActionsWriteResult = writeFile(githubActionsPath, githubActions, {
+        createDirectories: true,
+        addHeader: config.header.includeHeader,
+        eslintDisable: config.header.eslintDisable,
+      })
+
+      if (githubActionsWriteResult.isErr()) {
+        return err(githubActionsWriteResult.error)
+      }
+    }
+
+    // Generate environment configuration
+    const envConfig = generateEnvironmentConfig(dockerComposeOptions)
+    const envPath = '.env.example'
+    const envWriteResult = writeFile(envPath, envConfig, {
+      addHeader: config.header.includeHeader,
+      eslintDisable: config.header.eslintDisable,
+    })
+
+    if (envWriteResult.isErr()) {
+      return err(envWriteResult.error)
+    }
+
+    logger.success('Generated deployment configurations')
+
+    return ok(undefined)
+  } catch (error) {
+    return err(fromError(error))
+  }
 }
 
 /**
@@ -682,6 +1151,34 @@ async function main(): Promise<void> {
       } else {
         generationPromises.push(generateDocumentation(generatorArgs))
       }
+    }
+
+    if (config.targets.includes('crud')) {
+      generationPromises.push(generateCrud(generatorArgs))
+    }
+
+    if (config.targets.includes('convex')) {
+      generationPromises.push(generateConvex(generatorArgs))
+    }
+
+    if (config.targets.includes('forms')) {
+      generationPromises.push(generateForms(generatorArgs))
+    }
+
+    if (config.targets.includes('rails')) {
+      generationPromises.push(generateRails(generatorArgs))
+    }
+
+    if (config.targets.includes('nextjs')) {
+      generationPromises.push(generateNextJs(generatorArgs))
+    }
+
+    if (config.targets.includes('openapi')) {
+      generationPromises.push(generateOpenApi(generatorArgs))
+    }
+
+    if (config.targets.includes('deployment')) {
+      generationPromises.push(generateDeployment(generatorArgs))
     }
 
     // Wait for all generations to complete

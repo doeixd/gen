@@ -5,6 +5,7 @@
 
 import type { Entity } from '../entity'
 import { getFieldNames, getEditableFields } from '../utils'
+import { html, conditional, map } from '../tags'
 
 export interface ReactFormTemplateOptions {
   entity: Entity<any>
@@ -16,7 +17,7 @@ export function generateReactFormComponent(options: ReactFormTemplateOptions): s
   const entityName = entity.name.singular
   const fields = getEditableFields(entity)
 
-  return `\
+  return html`
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 
@@ -28,8 +29,8 @@ export interface ${entityName}FormProps {
 
 export function ${entityName}Form({ initialData, onSuccess, onCancel }: ${entityName}FormProps) {
   const queryClient = useQueryClient()
-  const [formData, setFormData] = useState<Partial<${entityName}>>(initialData || {${fields.map(f => `
-    ${String(f)}: ${JSON.stringify(entity.fields[f].defaultValue || '')},`).join('')}
+  const [formData, setFormData] = useState<Partial<${entityName}>>(initialData || {
+${map(fields, (f) => `    ${String(f)}: ${JSON.stringify(entity.fields[f].defaultValue || '')},`)}
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
 
@@ -60,16 +61,15 @@ export function ${entityName}Form({ initialData, onSuccess, onCancel }: ${entity
     const newErrors: Record<string, string> = {}
 
     // TODO: Add validation logic based on entity.fields[field].standardSchema
-${fields.map(f => {
+${map(fields, (f) => {
   const field = entity.fields[f]
   if (!field.optional) {
-    return `\
-    if (!formData.${String(f)}) {
+    return `    if (!formData.${String(f)}) {
       newErrors.${String(f)} = '${String(f)} is required'
     }`
   }
   return ''
-}).filter(Boolean).join('\n')}
+})}
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -91,14 +91,14 @@ ${fields.map(f => {
         ${mode === 'create' ? `Create ${entityName}` : `Edit ${entityName}`}
       </h2>
 
-${fields.map(f => {
+${map(fields, (f) => {
   const field = entity.fields[f]
   const fieldName = String(f)
   const fieldType = field.jsType || 'string'
   const inputComponent = field.inputComponent as string
 
   if (inputComponent === 'TextField' || inputComponent === 'TextArea') {
-    return `\
+    return `
       <div>
         <label className="block text-sm font-medium mb-1">
           ${fieldName}${field.optional ? '' : ' *'}
@@ -115,7 +115,7 @@ ${fields.map(f => {
         )}
       </div>`
   } else if (inputComponent === 'NumberField') {
-    return `\
+    return `
       <div>
         <label className="block text-sm font-medium mb-1">
           ${fieldName}${field.optional ? '' : ' *'}
@@ -131,7 +131,7 @@ ${fields.map(f => {
         )}
       </div>`
   } else if (inputComponent === 'Checkbox') {
-    return `\
+    return `
       <div className="flex items-center">
         <input
           type="checkbox"
@@ -142,7 +142,7 @@ ${fields.map(f => {
         <label className="text-sm font-medium">${fieldName}</label>
       </div>`
   } else {
-    return `\
+    return `
       <div>
         <label className="block text-sm font-medium mb-1">
           ${fieldName}${field.optional ? '' : ' *'}
@@ -158,7 +158,7 @@ ${fields.map(f => {
         )}
       </div>`
   }
-}).join('\n\n')}
+})}
 
       <div className="flex gap-2">
         <button
@@ -168,15 +168,14 @@ ${fields.map(f => {
         >
           {mutation.isPending ? 'Saving...' : '${mode === 'create' ? 'Create' : 'Update'}'}
         </button>
-        {onCancel && (
-          <button
-            type="button"
-            onClick={onCancel}
-            className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
-          >
-            Cancel
-          </button>
-        )}
+        ${conditional(!!onCancel, `
+        <button
+          type="button"
+          onClick={onCancel}
+          className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
+        >
+          Cancel
+        </button>`)}
       </div>
 
       {mutation.isError && (

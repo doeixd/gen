@@ -116,6 +116,28 @@ export type {
   ValidationResult,
 } from './validators'
 
+// ===== Errors =====
+export {
+  ErrorRegistry,
+  ErrorCatalog,
+  errors,
+  errorUtils,
+} from './errors'
+
+export type {
+  ErrorBase,
+  ErrorTypes,
+  AllErrorTypes,
+  ErrorCode,
+  ErrorCategory,
+  ErrorSeverity,
+  RecoveryAction,
+  ErrorRecovery,
+  ErrorDefinition,
+  ErrorInstance,
+  EntityErrorConfig,
+} from './errors'
+
 // ===== Entity =====
 export {
   routeConfig,
@@ -177,6 +199,38 @@ export {
   RelationshipBuilder,
   builders,
 } from './builders'
+
+// ===== Tags (Tagged Templates for Syntax Highlighting) =====
+export {
+  html,
+  css,
+  ts,
+  sql,
+  gql,
+  json,
+  yaml,
+  md,
+  templates,
+  conditional,
+  map,
+  code,
+  type TemplateLanguage,
+  getTemplate,
+} from './tags'
+
+// ===== Templates =====
+export {
+  entityTemplates,
+  fieldPresets,
+  relationshipHelpers,
+  queryHelpers,
+  validationHelpers,
+  createUserEntity,
+  createProductEntity,
+  createPostEntity,
+  createAddressFields,
+  createSocialMediaFields,
+} from './templates'
 
 // ===== Utils =====
 export {
