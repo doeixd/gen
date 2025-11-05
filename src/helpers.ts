@@ -4,7 +4,6 @@
  */
 
 import type { Entity, FieldMapping, NameConfig, RelationshipMapping, TableConfig } from './entity'
-import type { ComponentWithProps } from './components'
 import { validators } from './validators'
 import { MutatorFactory } from './mutations'
 
@@ -113,11 +112,9 @@ export const fieldNamePatterns: Record<string, Partial<FieldMapping<any>>> = {
 
   // Date/Time fields
   createdAt: {
-    inputComponent: null,
     displayComponent: 'DateTime' as any,
   },
   updatedAt: {
-    inputComponent: null,
     displayComponent: 'DateTime' as any,
   },
 

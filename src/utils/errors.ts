@@ -2,7 +2,7 @@
  * Error handling utilities
  */
 
-import { Result } from 'neverthrow'
+import { Result, ok, err } from 'neverthrow'
 
 export enum GeneratorErrorCode {
   INVALID_CONFIG = 'INVALID_CONFIG',
@@ -53,9 +53,9 @@ export function tryCatch<T>(
   errorCode: GeneratorErrorCode = GeneratorErrorCode.CODE_GENERATION_ERROR
 ): Result<T, GeneratorError> {
   try {
-    return Result.ok(fn())
+    return ok(fn())
   } catch (error) {
-    return Result.err(fromError(error, errorCode))
+    return err(fromError(error, errorCode))
   }
 }
 
@@ -65,11 +65,11 @@ export function tryCatch<T>(
 export async function tryCatchAsync<T>(
   fn: () => Promise<T>,
   errorCode: GeneratorErrorCode = GeneratorErrorCode.CODE_GENERATION_ERROR
-): Result<T, GeneratorError> {
+): Promise<Result<T, GeneratorError>> {
   try {
     const result = await fn()
-    return Result.ok(result)
+    return ok(result)
   } catch (error) {
-    return Result.err(fromError(error, errorCode))
+    return err(fromError(error, errorCode))
   }
 }

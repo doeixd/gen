@@ -5,7 +5,6 @@
 
 import type { Entity, FieldMapping } from './entity'
 import type { DbColumn } from './database'
-import type { StandardSchema } from './validators'
 
 /**
  * Extract field names from an entity

@@ -5,7 +5,6 @@
 
 import type { Entity } from './entity'
 import type { GeneratorArgs } from './utils/config'
-import type { DbColumn, DbSchema } from './database'
 
 /**
  * Generated database code interface

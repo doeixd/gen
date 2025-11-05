@@ -231,4 +231,4 @@ export class MutatorFactory {
  */
 export type InsertMutationFn<T> = (data: Partial<T>) => Promise<T> | T
 export type UpdateMutationFn<T> = (id: string, data: Partial<T>) => Promise<T> | T
-export type DeleteMutationFn<T> = (id: string) => Promise<void> | void
+export type DeleteMutationFn = (id: string) => Promise<void> | void

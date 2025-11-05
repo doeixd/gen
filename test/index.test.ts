@@ -1,8 +1,23 @@
 import { describe, it, expect } from 'vitest';
-import add from '../src';
+import { createEntity } from '../src';
 
-describe('blah', () => {
-  it('works', () => {
-    expect(add(1, 1)).toEqual(2);
+describe('Gen Library', () => {
+  it('exports createEntity function', () => {
+    expect(typeof createEntity).toBe('function');
+  });
+
+  it('can create a basic entity', () => {
+    const entity = createEntity({
+      id: 'test',
+      name: { singular: 'Test', plural: 'Tests' },
+      db: {
+        table: { name: 'tests', primaryKey: ['id'] },
+        columns: {}
+      },
+      fields: {}
+    });
+
+    expect(entity.id).toBe('test');
+    expect(entity.name.singular).toBe('Test');
   });
 });

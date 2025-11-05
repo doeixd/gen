@@ -23,7 +23,7 @@ export interface CRUDResult {
   readMany<T>(filter?: Partial<T>): Promise<{success: boolean, data?: T[], error?: string}>
   updateOne<T>(id: string, data: Partial<T>): Promise<{success: boolean, data?: T, error?: string}>
   updateMany<T>(filter: Partial<T>, data: Partial<T>): Promise<{success: boolean, data?: T[], errors?: string[]}>
-  deleteOne<T>(id: string): Promise<{success: boolean, error?: string}>
+  deleteOne<_T>(id: string): Promise<{success: boolean, error?: string}>
   deleteMany<T>(filter: Partial<T>): Promise<{success: boolean, count?: number, errors?: string[]}>
 }
 
@@ -40,7 +40,7 @@ export interface SyncConfig<T> {
 /**
  * Routes configuration for entity
  */
-export interface RoutesConfig<T = any, C extends ComponentType = ComponentType, R extends ComponentType = ComponentType> {
+export interface RoutesConfig<_T = any, _C extends ComponentType = ComponentType, R extends ComponentType = ComponentType> {
   basePath?: string
   listRoute?: {
     path?: string
@@ -88,7 +88,7 @@ export interface NameConfig {
 /**
  * Validation configuration for fields
  */
-export interface ValidationConfig<T, C extends ComponentType = ComponentType> {
+export interface ValidationConfig<T, _C extends ComponentType = ComponentType> {
   touched?: Validator<T>
   submitted?: Validator<T> | AsyncValidator<T>
   onBlur?: Validator<T>
@@ -114,7 +114,7 @@ export interface FieldMapping<T, C extends ComponentType = ComponentType> {
   typescriptType?: T // Phantom type for type inference
   sortable?: boolean | ((a: T, b: T) => number)
   filterable?: boolean | ((item: T, filterValue: any) => boolean)
-  routes?: RoutesConfig<T, C>
+  routes?: RoutesConfig<C, C>
   name?: string | NameConfig
   optional?: boolean
   editable?: boolean

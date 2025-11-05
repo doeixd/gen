@@ -42,7 +42,7 @@ export class FieldBuilder<T = any> {
     return this
   }
 
-  schema(schema: StandardSchema<T>) {
+  schema(schema: StandardSchema<any>) {
     this.config.standardSchema = schema
     return this
   }
@@ -210,8 +210,8 @@ export class EntityBuilder<T extends Record<string, any>> {
 
   field<K extends keyof T>(
     name: K,
-    dbColumn: DbColumn<T[K]>,
-    fieldMapping: FieldMapping<T[K]>
+    dbColumn: DbColumn<any>,
+    fieldMapping: FieldMapping<any>
   ) {
     this.config.db.columns[name] = dbColumn
     this.config.fields[name] = fieldMapping
@@ -234,16 +234,16 @@ export class EntityBuilder<T extends Record<string, any>> {
       .unique(options?.unique ?? false)
       .build()
 
-     const fieldMapping = FieldBuilder
-       .create<T[typeof name]>()
-       .inputComponent('TextField' as any)
-       .displayComponent('Text' as any)
-       .defaultValue(options?.defaultValue || '')
-       .schema(options?.schema || validators.string)
-       .jsType('string')
-       .build()
+      const fieldMapping = FieldBuilder
+        .create<string>()
+        .inputComponent('TextField' as any)
+        .displayComponent('Text' as any)
+        .defaultValue(options?.defaultValue || '')
+        .schema(options?.schema || validators.string)
+        .jsType('string')
+        .build()
 
-     return this.field(name, dbColumn, fieldMapping as any)
+      return this.field(name, dbColumn, fieldMapping as any)
   }
 
   numberField(
@@ -259,16 +259,16 @@ export class EntityBuilder<T extends Record<string, any>> {
       .nullable(options?.nullable ?? false)
       .build()
 
-     const fieldMapping = FieldBuilder
-       .create<T[typeof name]>()
-       .inputComponent('NumberField' as any)
-       .displayComponent('Number' as any)
-       .defaultValue(options?.defaultValue ?? 0)
-       .schema(options?.schema || validators.number)
-       .jsType('number')
-       .build()
+      const fieldMapping = FieldBuilder
+        .create<number>()
+        .inputComponent('NumberField' as any)
+        .displayComponent('Number' as any)
+        .defaultValue(options?.defaultValue ?? 0)
+        .schema(options?.schema || validators.number)
+        .jsType('number')
+        .build()
 
-     return this.field(name, dbColumn, fieldMapping as any)
+      return this.field(name, dbColumn, fieldMapping as any)
   }
 
   booleanField(
@@ -283,16 +283,16 @@ export class EntityBuilder<T extends Record<string, any>> {
       .nullable(false)
       .build()
 
-     const fieldMapping = FieldBuilder
-       .create<T[typeof name]>()
-       .inputComponent('Checkbox' as any)
-       .displayComponent('Badge' as any)
-       .defaultValue(options?.defaultValue ?? false)
-       .schema(options?.schema || validators.boolean)
-       .jsType('boolean')
-       .build()
+      const fieldMapping = FieldBuilder
+        .create<boolean>()
+        .inputComponent('Checkbox' as any)
+        .displayComponent('Badge' as any)
+        .defaultValue(options?.defaultValue ?? false)
+        .schema(options?.schema || validators.boolean)
+        .jsType('boolean')
+        .build()
 
-     return this.field(name, dbColumn, fieldMapping as any)
+      return this.field(name, dbColumn, fieldMapping as any)
   }
 
   emailField(name: keyof T) {
@@ -301,13 +301,13 @@ export class EntityBuilder<T extends Record<string, any>> {
       .unique(true)
       .build()
 
-     const fieldMapping = FieldBuilder
-       .create<T[typeof name]>()
-       .inputComponent('TextField' as any)
-       .displayComponent('Email' as any)
-       .defaultValue('')
-       .schema(validators.email)
-       .jsType('string')
+      const fieldMapping = FieldBuilder
+        .create<string>()
+        .inputComponent('TextField' as any)
+        .displayComponent('Email' as any)
+        .defaultValue('')
+        .schema(validators.email)
+        .jsType('string')
        .build()
 
      return this.field(name, dbColumn, fieldMapping as any)
@@ -319,35 +319,33 @@ export class EntityBuilder<T extends Record<string, any>> {
       .nullable(optional)
       .build()
 
-     const fieldMapping = FieldBuilder
-       .create<T[typeof name]>()
-       .inputComponent('TextField' as any)
-       .displayComponent('Link' as any)
-       .defaultValue('')
-       .schema(optional ? validators.optional(validators.url) : validators.url)
-       .jsType('string')
-       .build()
+      const fieldMapping = FieldBuilder
+        .create<string>()
+        .inputComponent('TextField' as any)
+        .displayComponent('Link' as any)
+        .defaultValue('')
+        .schema(optional ? validators.optional(validators.url) : validators.url)
+        .jsType('string')
+        .build()
 
-     return this.field(name, dbColumn, fieldMapping as any)
+      return this.field(name, dbColumn, fieldMapping as any)
   }
 
    timestamps() {
-     this.field(
-       'createdAt' as keyof T,
-       DbColumnBuilder.create(dbTypes.timestamp()).nullable(false).build(),
-       FieldBuilder.create<Date>()
-         .inputComponent(null as any)
-         .displayComponent('DateTime' as any)
-         .editable(false)
-         .build() as any
-     ) as any
+      this.field(
+        'createdAt' as keyof T,
+        DbColumnBuilder.create(dbTypes.timestamp()).nullable(false).build(),
+        FieldBuilder.create<Date>()
+          .displayComponent('DateTime' as any)
+          .editable(false)
+          .build() as any
+      ) as any
 
-     this.field(
-       'updatedAt' as keyof T,
-       DbColumnBuilder.create(dbTypes.timestamp()).nullable(true).build(),
-       FieldBuilder.create<Date>()
-         .inputComponent(null as any)
-         .displayComponent('DateTime' as any)
+      this.field(
+        'updatedAt' as keyof T,
+        DbColumnBuilder.create(dbTypes.timestamp()).nullable(true).build(),
+        FieldBuilder.create<Date>()
+          .displayComponent('DateTime' as any)
          .editable(false)
          .build() as any
      ) as any
@@ -360,7 +358,7 @@ export class EntityBuilder<T extends Record<string, any>> {
     return this
   }
 
-  routes(routes: RoutesConfig<T>) {
+  routes(routes: RoutesConfig<T, ComponentType, ComponentType>) {
     this.config.routes = routes
     return this
   }

@@ -405,14 +405,14 @@ export function mergeConfig(base: GeneratorConfig, overrides: Partial<GeneratorC
 /**
  * Validate configuration
  */
-export function validateConfig(config: GeneratorConfig): Result<void, GeneratorError> {
+export function validateConfig(_config: GeneratorConfig): Result<void, GeneratorError> {
   return ok(undefined)
 }
 
 /**
  * Generate file header
  */
-export function generateFileHeader(config: GeneratorConfig, description: string): string {
+export function generateFileHeader(_config: GeneratorConfig, description: string): string {
   return `/**
  * ${description}
  *
@@ -424,7 +424,7 @@ export function generateFileHeader(config: GeneratorConfig, description: string)
 /**
  * Add ESLint disable comments
  */
-export function addEslintDisable(config: GeneratorConfig): string {
+export function addEslintDisable(_config: GeneratorConfig): string {
   return `/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */`
 }
