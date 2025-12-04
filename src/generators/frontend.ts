@@ -145,16 +145,16 @@ export class DocumentationGenerator {
 ## Relationships
 
 ${entity.relationships.map(rel => {
-  const localTable = typeof rel.localEntity === 'string' ? rel.localEntity : rel.localEntity.db.table.name
-  const foreignTable = typeof rel.foreignEntity === 'string' ? rel.foreignEntity : rel.foreignEntity.db.table.name
+      const localTable = typeof rel.localEntity === 'string' ? rel.localEntity : rel.localEntity.db.table.name
+      const foreignTable = typeof rel.foreignEntity === 'string' ? rel.foreignEntity : rel.foreignEntity.db.table.name
 
-  return `### ${rel.name}
+      return `### ${rel.name}
 - **Type**: ${rel.relationType}
 - **Local**: ${localTable} (${rel.db.foreignKey.localColumn})
 - **Foreign**: ${foreignTable} (${rel.db.foreignKey.foreignColumn})
 - **Description**: ${rel.description || 'No description'}
 `
-}).join('\n')}` : ''
+    }).join('\n')}` : ''
 
     const permissionsSection = entity.permissions ? `
 ## Permissions
@@ -484,8 +484,8 @@ ${entity.permissions?.organization ? `
       const foreignTable = typeof rel.foreignEntity === 'string' ? rel.foreignEntity : rel.foreignEntity.db.table.name
 
       const cardinality = rel.relationType === 'one-to-one' ? '1-1' :
-                         rel.relationType === 'one-to-many' ? '1-*' :
-                         rel.relationType === 'many-to-one' ? '*-1' : '*-*'
+        rel.relationType === 'one-to-many' ? '1-*' :
+          rel.relationType === 'many-to-one' ? '*-1' : '*-*'
 
       return `${localTable} ${cardinality} ${foreignTable} : ${rel.db.foreignKey.localColumn} -> ${rel.db.foreignKey.foreignColumn}`
     }).join('\n') : ''
@@ -618,13 +618,13 @@ All endpoints may return the following error responses:
       return `### ${name}
 
 **Type**: ${fieldConfig.jsType || 'string'}
-**Required**: ${field.optional ? 'No' : 'Yes'}
+**Required**: ${(field as any).optional ? 'No' : 'Yes'}
 **Validation**: ${fieldConfig.standardSchema ? 'Yes' : 'No'}
-**Description**: ${field.description || 'No description'}
+**Description**: ${(field as any).description || 'No description'}
 
-${field.permissions ? `**Permissions**: Restricted access` : '**Permissions**: No restrictions'}
+${(field as any).permissions ? `**Permissions**: Restricted access` : '**Permissions**: No restrictions'}
 
-${field.defaultValue ? `**Default**: ${JSON.stringify(field.defaultValue)}` : ''}
+${(field as any).defaultValue ? `**Default**: ${JSON.stringify((field as any).defaultValue)}` : ''}
 `
     }).join('\n')
 
@@ -650,7 +650,7 @@ ${Object.entries(entity.fields).filter(([_, field]) => (field as any).standardSc
 
 ## Permission Restrictions
 
-${Object.entries(entity.fields).filter(([_, field]) => field.permissions).map(([name]) => `- \`${name}\`: Has field-level permissions`).join('\n')}
+${Object.entries(entity.fields).filter(([_, field]) => (field as any).permissions).map(([name]) => `- \`${name}\`: Has field-level permissions`).join('\n')}
 `
   }
 

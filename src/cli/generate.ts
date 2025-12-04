@@ -16,6 +16,11 @@ import pluralize from 'pluralize'
 // Import generator interfaces
 import type { CustomGenerator } from '../generator-interfaces'
 
+// Import generators
+import { APIGenerator } from '../generators/api.js'
+import { FrontendGenerator, DocumentationGenerator } from '../generators/frontend.js'
+import { TestGenerator } from '../generators/test.js'
+
 // Import utilities
 import {
   DEFAULT_CONFIG,
@@ -386,91 +391,7 @@ async function generateOpenApi(args: GeneratorArgs): Promise<Result<void, Genera
   }
 }
 
-/**
- * Generate tests for all entities
- */
-async function generateTests(args: GeneratorArgs): Promise<Result<void, GeneratorError>> {
-  try {
-    const { config, entities } = args
-    logger.section('🧪 Generating Tests')
 
-    // Ensure output directories exist
-    const testsDirResult = ensureDirectory(config.paths.tests)
-    if (testsDirResult.isErr()) return err(testsDirResult.error)
-
-    for (const entity of entities) {
-      logger.subsection(`Processing ${entity.name.singular}`)
-
-      const testOptions: TestingTemplateOptions = {
-        entity,
-        framework: 'vitest',
-        includeUnitTests: true,
-        includeIntegrationTests: true,
-        includeE2ETests: true,
-        includeMocks: true,
-        testDataFactory: true,
-      }
-
-      // Generate unit tests
-      const unitTests = generateUnitTests(testOptions)
-      const unitTestPath = path.join(config.paths.tests, 'unit', `${entity.name.singular}.unit.test.ts`)
-      const unitWriteResult = writeFile(unitTestPath, unitTests, {
-        createDirectories: true,
-        addHeader: config.header.includeHeader,
-        eslintDisable: config.header.eslintDisable,
-      })
-
-      if (unitWriteResult.isErr()) {
-        return err(unitWriteResult.error)
-      }
-
-      // Generate integration tests
-      const integrationTests = generateIntegrationTests(testOptions)
-      const integrationTestPath = path.join(config.paths.tests, 'integration', `${entity.name.singular}.integration.test.ts`)
-      const integrationWriteResult = writeFile(integrationTestPath, integrationTests, {
-        createDirectories: true,
-        addHeader: config.header.includeHeader,
-        eslintDisable: config.header.eslintDisable,
-      })
-
-      if (integrationWriteResult.isErr()) {
-        return err(integrationWriteResult.error)
-      }
-
-      // Generate E2E tests
-      const e2eTests = generateE2ETests(testOptions)
-      const e2eTestPath = path.join(config.paths.tests, 'e2e', `${entity.name.singular}.e2e.test.ts`)
-      const e2eWriteResult = writeFile(e2eTestPath, e2eTests, {
-        createDirectories: true,
-        addHeader: config.header.includeHeader,
-        eslintDisable: config.header.eslintDisable,
-      })
-
-      if (e2eWriteResult.isErr()) {
-        return err(e2eWriteResult.error)
-      }
-
-      // Generate test data factory
-      const testFactory = generateTestDataFactory(testOptions)
-      const factoryPath = path.join(config.paths.tests, 'factories', `${entity.name.singular}.factory.ts`)
-      const factoryWriteResult = writeFile(factoryPath, testFactory, {
-        createDirectories: true,
-        addHeader: config.header.includeHeader,
-        eslintDisable: config.header.eslintDisable,
-      })
-
-      if (factoryWriteResult.isErr()) {
-        return err(factoryWriteResult.error)
-      }
-
-      logger.success(`Generated test files for ${entity.name.singular}`)
-    }
-
-    return ok(undefined)
-  } catch (error) {
-    return err(fromError(error))
-  }
-}
 
 /**
  * Generate deployment configurations

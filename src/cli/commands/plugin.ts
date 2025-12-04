@@ -446,7 +446,7 @@ export * from './${pluginName}.${ext}'`
     fs.writeFileSync(`index.${ext}`, indexContent)
 
     // Write README
-    const readmeContent = \`# gen-plugin-${pluginName}
+    const readmeContent = `# gen-plugin-${pluginName}
 
 A Gen plugin for ${pluginName} functionality.
 
@@ -468,7 +468,7 @@ gen ${pluginName}
 npm run dev
 npm test
 \`\`\`
-\`
+`
 
     fs.writeFileSync('README.md', readmeContent)
 

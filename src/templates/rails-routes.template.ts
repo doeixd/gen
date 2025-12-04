@@ -53,58 +53,58 @@ const asyncHandler = (fn: Function) => (req: Request, res: Response, next: Funct
 // Types
 export interface ${entityName} {
 ${map(fields, (field) => {
-  const fieldDef = entity.fields[field]
-  const fieldType = fieldDef.jsType || 'string'
-  const isOptional = fieldDef.optional
-  return `  ${String(field)}${isOptional ? '?' : ''}: ${fieldType}`
-})}
+    const fieldDef = entity.fields[field]
+    const fieldType = fieldDef.jsType || 'string'
+    const isOptional = fieldDef.optional
+    return `  ${String(field)}${isOptional ? '?' : ''}: ${fieldType}`
+  })}
 }
 
 export interface Create${entityName}Request {
 ${map(fields.filter(f => entity.fields[f].optional !== false), (field) => {
-  const fieldDef = entity.fields[field]
-  const fieldType = fieldDef.jsType || 'string'
-  return `  ${String(field)}?: ${fieldType}`
-})}
+    const fieldDef = entity.fields[field]
+    const fieldType = fieldDef.jsType || 'string'
+    return `  ${String(field)}?: ${fieldType}`
+  })}
 }
 
 export interface Update${entityName}Request {
 ${map(fields, (field) => {
-  const fieldDef = entity.fields[field]
-  const fieldType = fieldDef.jsType || 'string'
-  return `  ${String(field)}?: ${fieldType}`)
-})}
+    const fieldDef = entity.fields[field]
+    const fieldType = fieldDef.jsType || 'string'
+    return `  ${String(field)}?: ${fieldType}`
+  })}
 }
 
 ${conditional(includeValidation, `
 // Validation schemas
 const ${entityName}Schema = z.object({
 ${map(fields, (field) => {
-  const fieldDef = entity.fields[field]
-  const fieldType = fieldDef.jsType || 'string'
-  const isOptional = fieldDef.optional
+    const fieldDef = entity.fields[field]
+    const fieldType = fieldDef.jsType || 'string'
+    const isOptional = fieldDef.optional
 
-  let zodType: string
-  switch (fieldType) {
-    case 'string':
-      zodType = 'z.string()'
-      break
-    case 'number':
-      zodType = 'z.number()'
-      break
-    case 'boolean':
-      zodType = 'z.boolean()'
-      break
-    default:
-      zodType = 'z.any()'
-  }
+    let zodType: string
+    switch (fieldType) {
+      case 'string':
+        zodType = 'z.string()'
+        break
+      case 'number':
+        zodType = 'z.number()'
+        break
+      case 'boolean':
+        zodType = 'z.boolean()'
+        break
+      default:
+        zodType = 'z.any()'
+    }
 
-  if (!isOptional) {
-    zodType += `.min(1, '${field} is required')`
-  }
+    if (!isOptional) {
+      zodType += `.min(1, '${field} is required')`
+    }
 
-  return `  ${String(field)}: ${isOptional ? `z.optional(${zodType})` : zodType},`
-})}
+    return `  ${String(field)}: ${isOptional ? `z.optional(${zodType})` : zodType},`
+  })}
 })
 
 const create${entityName}Schema = ${entityName}Schema.omit({ id: true }).partial({

@@ -72,6 +72,22 @@ export function md(strings: TemplateStringsArray, ...values: any[]): string {
   return baseTemplate(strings, ...values)
 }
 
+/**
+ * Tagged template for Dockerfile content
+ * Provides syntax highlighting for Dockerfile
+ */
+export function dockerfile(strings: TemplateStringsArray, ...values: any[]): string {
+  return baseTemplate(strings, ...values)
+}
+
+/**
+ * Tagged template for Shell script content
+ * Provides syntax highlighting for Shell scripts
+ */
+export function shell(strings: TemplateStringsArray, ...values: any[]): string {
+  return baseTemplate(strings, ...values)
+}
+
 // Re-export utility functions for convenience
 export { conditional, map } from './templates/utils'
 

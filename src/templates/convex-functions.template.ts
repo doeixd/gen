@@ -87,27 +87,27 @@ export const get${pluralName}Count = query({
 export const create${entityName} = mutation({
   args: {
 ${map(fields, (field) => {
-  const fieldDef = entity.fields[field]
-  const isOptional = fieldDef.optional
-  const fieldType = fieldDef.jsType || 'string'
+    const fieldDef = entity.fields[field]
+    const isOptional = fieldDef.optional
+    const fieldType = fieldDef.jsType || 'string'
 
-  let convexType: string
-  switch (fieldType) {
-    case 'string':
-      convexType = 'v.string()'
-      break
-    case 'number':
-      convexType = 'v.number()'
-      break
-    case 'boolean':
-      convexType = 'v.boolean()'
-      break
-    default:
-      convexType = 'v.any()'
-  }
+    let convexType: string
+    switch (fieldType) {
+      case 'string':
+        convexType = 'v.string()'
+        break
+      case 'number':
+        convexType = 'v.number()'
+        break
+      case 'boolean':
+        convexType = 'v.boolean()'
+        break
+      default:
+        convexType = 'v.any()'
+    }
 
-  return `    ${String(field)}: ${isOptional ? `v.optional(${convexType})` : convexType},`
-})}
+    return `    ${String(field)}: ${isOptional ? `v.optional(${convexType})` : convexType},`
+  })}
   },
   handler: async (ctx, args) => {
     const id = await ctx.db.insert("${tableName}", args)
@@ -122,26 +122,26 @@ export const update${entityName} = mutation({
   args: {
     id: v.id("${tableName}"),
 ${map(fields, (field) => {
-  const fieldDef = entity.fields[field]
-  const fieldType = fieldDef.jsType || 'string'
+    const fieldDef = entity.fields[field]
+    const fieldType = fieldDef.jsType || 'string'
 
-  let convexType: string
-  switch (fieldType) {
-    case 'string':
-      convexType = 'v.string()'
-      break
-    case 'number':
-      convexType = 'v.number()'
-      break
-    case 'boolean':
-      convexType = 'v.boolean()'
-      break
-    default:
-      convexType = 'v.any()'
-  }
+    let convexType: string
+    switch (fieldType) {
+      case 'string':
+        convexType = 'v.string()'
+        break
+      case 'number':
+        convexType = 'v.number()'
+        break
+      case 'boolean':
+        convexType = 'v.boolean()'
+        break
+      default:
+        convexType = 'v.any()'
+    }
 
-  return `    ${String(field)}: v.optional(${convexType}),`
-})}
+    return `    ${String(field)}: v.optional(${convexType}),`
+  })}
   },
   handler: async (ctx, args) => {
     const { id, ...updates } = args
@@ -197,29 +197,29 @@ export const bulkDelete${pluralName} = mutation({
 
 export type ${entityName} = {
 ${map(fields, (field) => {
-  const fieldDef = entity.fields[field]
-  const isOptional = fieldDef.optional
-  const fieldType = fieldDef.jsType || 'string'
-  return `  ${String(field)}${isOptional ? '?' : ''}: ${fieldType}`
-})}
+    const fieldDef = entity.fields[field]
+    const isOptional = fieldDef.optional
+    const fieldType = fieldDef.jsType || 'string'
+    return `  ${String(field)}${isOptional ? '?' : ''}: ${fieldType}`
+  })}
 }
 
 export type Create${entityName}Args = {
 ${map(fields, (field) => {
-  const fieldDef = entity.fields[field]
-  const isOptional = fieldDef.optional
-  const fieldType = fieldDef.jsType || 'string'
-  return `  ${String(field)}${isOptional ? '?' : ''}: ${fieldType}`
-})}
+    const fieldDef = entity.fields[field]
+    const isOptional = fieldDef.optional
+    const fieldType = fieldDef.jsType || 'string'
+    return `  ${String(field)}${isOptional ? '?' : ''}: ${fieldType}`
+  })}
 }
 
 export type Update${entityName}Args = {
   id: string
 ${map(fields, (field) => {
-  const fieldDef = entity.fields[field]
-  const fieldType = fieldDef.jsType || 'string'
-  return `  ${String(field)}?: ${fieldType}`)
-})}
+    const fieldDef = entity.fields[field]
+    const fieldType = fieldDef.jsType || 'string'
+    return `  ${String(field)}?: ${fieldType}`
+  })}
 }
 `
 }

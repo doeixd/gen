@@ -1,0 +1,52 @@
+# Test files and directories
+test/
+*.test.ts
+*.test.js
+*.spec.ts
+*.spec.js
+__tests__/
+coverage/
+
+# Development files
+.claude/
+old/
+examples/
+temp_*.ts
+temp_*.js
+
+# Documentation (development only)
+CLAUDE.md
+ERROR_SYSTEM.md
+IMPLEMENTATION_PROGRESS.md
+TEST_SUMMARY.md
+
+# Build configuration
+tsconfig.json
+pridepack.json
+vitest.config.*
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment
+.env
+.env.*
+
+# Misc
+.DS_Store
+Thumbs.db

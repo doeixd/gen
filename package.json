@@ -1,6 +1,6 @@
 {
-  "name": "gen",
-  "version": "0.0.0",
+  "name": "@doeixd/gen",
+  "version": "0.0.4",
   "files": [
     "dist",
     "src"
@@ -9,7 +9,21 @@
     "node": ">=16"
   },
   "license": "MIT",
+  "bin": {
+    "gen": "./dist/cjs/production/cli.js"
+  },
   "keywords": [
+    "code-generation",
+    "codegen",
+    "cli",
+    "typescript",
+    "template",
+    "scaffolding",
+    "generator",
+    "developer-tools",
+    "build-tools",
+    "automation",
+    "boilerplate",
     "pridepack"
   ],
   "devDependencies": {
@@ -30,17 +44,14 @@
     "test": "vitest --run"
   },
   "private": false,
-  "description": "An app data config for code gen",
-  "bin": {
-    "gen": "./dist/cjs/production/cli/index.js"
-  },
+  "description": "A powerful CLI tool and library for code generation with configurable templates, TypeScript support, and flexible data transformation utilities",
   "repository": {
-    "url": "",
+    "url": "https://github.com/doeixd/gen",
     "type": "git"
   },
-  "homepage": "",
+  "homepage": "https://github.com/doeixd/gen#readme",
   "bugs": {
-    "url": ""
+    "url": "https://github.com/doeixd/gen/issues"
   },
   "author": "Patrick Glenn",
   "publishConfig": {
@@ -49,7 +60,7 @@
   "dependencies": {
     "neverthrow": "^8.2.0",
     "pluralize": "^8.0.0",
-    "zod": "^4.1.12",
+    "zod": "^3.24.1",
     "commander": "^12.0.0"
   },
   "types": "./dist/types/index.d.ts",
@@ -64,9 +75,22 @@
       },
       "require": "./dist/cjs/production/index.js",
       "import": "./dist/esm/production/index.js"
+    },
+    "./cli": {
+      "types": "./dist/types/cli/index.d.ts",
+      "development": {
+        "require": "./dist/cjs/development/cli.js",
+        "import": "./dist/esm/development/cli.js"
+      },
+      "require": "./dist/cjs/production/cli.js",
+      "import": "./dist/esm/production/cli.js"
     }
   },
   "typesVersions": {
-    "*": {}
+    "*": {
+      "cli": [
+        "./dist/types/cli/index.d.ts"
+      ]
+    }
   }
 }

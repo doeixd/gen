@@ -1,6 +1,6 @@
 # Gen - Single Source of Truth Code Generator
 
-[![npm version](https://badge.fury.io/js/gen.svg)](https://badge.fury.io/js/gen)
+[![npm version](https://badge.fury.io/js/@doeixd%2Fgen.svg)](https://badge.fury.io/js/@doeixd%2Fgen)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 
@@ -53,9 +53,9 @@
 ### Installation
 
 ```bash
-npm install -g gen
+npm install -g @doeixd/gen
 # or
-npm install --save-dev gen
+npm install --save-dev @doeixd/gen
 ```
 
 ### Define an Entity
@@ -63,7 +63,7 @@ npm install --save-dev gen
 Create an entity definition file (e.g., `entities.ts`):
 
 ```typescript
-import { createEntity, ComponentRegistry, validators, dbTypes } from 'gen'
+import { createEntity, ComponentRegistry, validators, dbTypes } from '@doeixd/gen'
 
 // Register your UI components (do this once)
 ComponentRegistry.registerBulk({
@@ -104,13 +104,13 @@ export const userEntity = createEntity({
 
 ```bash
 # Generate everything
-gen --targets=database,api,frontend
+@doeixd/gen --targets=database,api,frontend
 
 # Generate with custom config
-gen --config=./gen-config.js --targets=database --dry-run
+@doeixd/gen --config=./gen-config.js --targets=database --dry-run
 
 # Generate specific database targets
-gen --targets=drizzle,prisma,sql
+@doeixd/gen --targets=drizzle,prisma,sql
 ```
 
 ## 📖 Entity System
@@ -169,7 +169,7 @@ type Entity<T, C, R, E> = {
 Use the `createEntity()` helper for sensible defaults:
 
 ```typescript
-import { createEntity, dbTypes, validators } from 'gen'
+import { createEntity, dbTypes, validators } from '@doeixd/gen'
 
 const productEntity = createEntity({
   id: 'product',
@@ -199,16 +199,16 @@ Generate database schemas for multiple targets:
 
 ```bash
 # Generate Drizzle ORM schema
-gen --targets=drizzle
+@doeixd/gen --targets=drizzle
 
 # Generate Prisma schema
-gen --targets=prisma
+@doeixd/gen --targets=prisma
 
 # Generate raw SQL migrations
-gen --targets=sql
+@doeixd/gen --targets=sql
 
 # Generate Convex schema
-gen --targets=convex
+@doeixd/gen --targets=convex
 ```
 
 **Generated Output:**
@@ -230,10 +230,10 @@ Create complete API routes with validation and middleware:
 
 ```bash
 # Generate Express routes
-gen --targets=api --api-framework=express
+@doeixd/gen --targets=api --api-framework=express
 
 # Generate with OpenAPI specs
-gen --targets=api --include-openapi
+@doeixd/gen --targets=api --include-openapi
 ```
 
 **Generated Output:**
@@ -257,10 +257,10 @@ Generate UI components and routes:
 
 ```bash
 # Generate React components
-gen --targets=frontend --frontend-framework=react
+@doeixd/gen --targets=frontend --frontend-framework=react
 
 # Generate with forms and tables
-gen --targets=frontend --include-forms --include-tables
+@doeixd/gen --targets=frontend --include-forms --include-tables
 ```
 
 **Generated Output:**
@@ -288,7 +288,7 @@ Gen uses specialized tagged template functions for enhanced syntax highlighting 
 ### Language-Specific Templates
 
 ```typescript
-import { html, css, sql, ts, gql, json, yaml, md } from 'gen'
+import { html, css, sql, ts, gql, json, yaml, md } from '@doeixd/gen'
 
 // HTML/JSX templates with proper highlighting
 const componentTemplate = html`
@@ -419,7 +419,7 @@ const readmeTemplate = md`
 For dynamic language selection, use the `code()` function:
 
 ```typescript
-import { code } from 'gen'
+import { code } from '@doeixd/gen'
 
 // Generate code with specific language hints
 const pythonCode = code('python')`
@@ -443,7 +443,7 @@ fn main() {
 ### Template Utilities
 
 ```typescript
-import { conditional, map } from 'gen'
+import { conditional, map } from '@doeixd/gen'
 
 // Conditional template inclusion
 const formTemplate = html`
@@ -480,7 +480,7 @@ Gen provides specialized generators for different frameworks and use cases:
 Generate RESTful API routes similar to Ruby on Rails:
 
 ```bash
-gen generate --targets=rails
+@doeixd/gen generate --targets=rails
 ```
 
 **Features:**
@@ -495,7 +495,7 @@ gen generate --targets=rails
 Generate Next.js 13+ App Router API routes:
 
 ```bash
-gen generate --targets=nextjs
+@doeixd/gen generate --targets=nextjs
 ```
 
 **Features:**
@@ -510,7 +510,7 @@ gen generate --targets=nextjs
 Generate OpenAPI 3.0 specifications for API documentation:
 
 ```bash
-gen generate --targets=openapi
+@doeixd/gen generate --targets=openapi
 ```
 
 **Features:**
@@ -525,7 +525,7 @@ gen generate --targets=openapi
 Generate comprehensive test suites:
 
 ```bash
-gen generate --targets=tests
+@doeixd/gen generate --targets=tests
 ```
 
 **Generates:**
@@ -540,7 +540,7 @@ gen generate --targets=tests
 Generate deployment configurations for various platforms:
 
 ```bash
-gen generate --targets=deployment
+@doeixd/gen generate --targets=deployment
 ```
 
 **Generates:**
@@ -559,23 +559,23 @@ Gen supports a powerful plugin architecture that allows you to extend functional
 
 ```bash
 # Install a plugin
-gen plugin install gen-plugin-react
+@doeixd/gen plugin install @doeixd/gen-plugin-react
 
 # Install globally
-gen plugin install --global gen-plugin-database
+@doeixd/gen plugin install --global @doeixd/gen-plugin-database
 
 # List installed plugins
-gen plugin list
+@doeixd/gen plugin list
 ```
 
 ### Creating Plugins
 
 ```bash
 # Create a new plugin
-gen plugin create my-plugin --template=generator
+@doeixd/gen plugin create my-plugin --template=generator
 
 # Create a command plugin
-gen plugin create my-command --template=command
+@doeixd/gen plugin create my-command --template=command
 ```
 
 ### Plugin API
@@ -605,106 +605,106 @@ export default {
 ### Available Commands
 
 ```bash
-gen init [project-name]     # Initialize a new project
-gen generate [targets...]   # Generate code from entities
-gen plugin <command>        # Manage plugins
-gen config <command>        # Manage configuration
-gen --help                  # Show help
-gen --version               # Show version
+@doeixd/gen init [project-name]     # Initialize a new project
+@doeixd/gen generate [targets...]   # Generate code from entities
+@doeixd/gen plugin <command>        # Manage plugins
+@doeixd/gen config <command>        # Manage configuration
+@doeixd/gen --help                  # Show help
+@doeixd/gen --version               # Show version
 ```
 
 ### Basic Commands
 
 ```bash
 # Initialize a new project
-gen init my-project
-gen init --template=convex
+@doeixd/gen init my-project
+@doeixd/gen init --template=convex
 
 # Generate all targets
-gen generate
+@doeixd/gen generate
 
 # Generate specific targets
-gen generate --targets=database,api,frontend
+@doeixd/gen generate --targets=database,api,frontend
 
 # Generate Convex-specific code
-gen generate --targets=convex,crud,forms
+@doeixd/gen generate --targets=convex,crud,forms
 
 # Generate Rails-style routes
-gen generate --targets=rails
+@doeixd/gen generate --targets=rails
 
 # Generate Next.js API routes
-gen generate --targets=nextjs
+@doeixd/gen generate --targets=nextjs
 
 # Generate OpenAPI documentation
-gen generate --targets=openapi
+@doeixd/gen generate --targets=openapi
 
 # Generate deployment configs
-gen generate --targets=deployment
+@doeixd/gen generate --targets=deployment
 
 # Dry run (preview changes)
-gen generate --dry-run
+@doeixd/gen generate --dry-run
 
 # Backup existing files
-gen generate --backup
+@doeixd/gen generate --backup
 
 # Incremental generation (skip existing)
-gen generate --incremental
+@doeixd/gen generate --incremental
 
 # Verbose logging
-gen --verbose
+@doeixd/gen --verbose
 ```
 
 ### Target Options
 
 ```bash
 # Database targets
-gen --targets=drizzle,prisma,sql,convex
+@doeixd/gen --targets=drizzle,prisma,sql,convex
 
 # API targets
-gen --targets=express,fastify,hono,koa
+@doeixd/gen --targets=express,fastify,hono,koa
 
 # Frontend targets
-gen --targets=react,vue,svelte
+@doeixd/gen --targets=react,vue,svelte
 
 # New comprehensive targets
-gen --targets=crud        # Complete CRUD routes with TanStack Router
-gen --targets=convex      # Convex functions (queries & mutations)
-gen --targets=forms       # TanStack Form components
+@doeixd/gen --targets=crud        # Complete CRUD routes with TanStack Router
+@doeixd/gen --targets=convex      # Convex functions (queries & mutations)
+@doeixd/gen --targets=forms       # TanStack Form components
 ```
 
 ### Configuration Options
 
 ```bash
 # Use custom config file
-gen --config=./my-config.js
+@doeixd/gen --config=./my-config.js
 
 # Use custom generator script
-gen --generatorScript=./custom-generators.js
+@doeixd/gen --generatorScript=./custom-generators.js
 
 # Specify output paths
-gen --output=./generated
+@doeixd/gen --output=./generated
 
 # Generate only specific tables
-gen --tables=users,products
+@doeixd/gen --tables=users,products
 
 # Force overwrite without prompts
-gen --force
+@doeixd/gen --force
 ```
 
 ### Advanced Options
 
 ```bash
 # API-specific options
-gen --api-framework=express --api-base-path=/api/v2 --include-openapi
+@doeixd/gen --api-framework=express --api-base-path=/api/v2 --include-openapi
 
 # Database-specific options
-gen --db-targets=drizzle,prisma --include-migrations
+@doeixd/gen --db-targets=drizzle,prisma --include-migrations
 
 # Frontend-specific options
-gen --frontend-framework=react --include-forms --include-tables
+@doeixd/gen --frontend-framework=react --include-forms --include-tables
 
 # Testing options
-gen --include-unit-tests --include-integration-tests --test-framework=vitest
+@doeixd/gen --include-unit-tests --include-integration-tests --test-framework=vitest
 ```
 
 ## ⚙️ Configuration
@@ -788,7 +788,7 @@ import {
   resolveFieldConfig,
   entityToTypeScript,
   entityToJsonSchema,
-} from 'gen'
+} from '@doeixd/gen'
 ```
 
 ### Key Types
@@ -804,7 +804,7 @@ import {
 ### E-commerce Product Catalog
 
 ```typescript
-import { createEntity, dbTypes, validators } from 'gen'
+import { createEntity, dbTypes, validators } from '@doeixd/gen'
 
 export const productEntity = createEntity({
   id: 'product',
@@ -896,7 +896,7 @@ export const userEntity = createEntity({
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/gen.git
+git clone https://github.com/doeixd/gen.git
 cd gen
 
 # Install dependencies

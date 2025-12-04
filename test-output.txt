@@ -1,0 +1,165 @@
+
+> @doeixd/gen@0.0.1 test
+> vitest --run
+
+
+[1m[7m[36m RUN [39m[27m[22m [36mv2.1.9 [39m[90mC:/Users/Patrick/gen[39m
+
+ [32mΓ£ô[39m test/permissions.test.ts [2m([22m[2m23 tests[22m[2m)[22m[90m 16[2mms[22m[39m
+ [32mΓ£ô[39m test/components.test.ts [2m([22m[2m13 tests[22m[2m)[22m[90m 12[2mms[22m[39m
+ [32mΓ£ô[39m test/database.test.ts [2m([22m[2m28 tests[22m[2m)[22m[90m 17[2mms[22m[39m
+ [32mΓ£ô[39m test/helpers.test.ts [2m([22m[2m30 tests[22m[2m)[22m[90m 20[2mms[22m[39m
+ [32mΓ£ô[39m test/generators.test.ts [2m([22m[2m32 tests[22m[2m)[22m[90m 32[2mms[22m[39m
+ [32mΓ£ô[39m test/mutations.test.ts [2m([22m[2m18 tests[22m[2m)[22m[90m 40[2mms[22m[39m
+ [32mΓ£ô[39m test/builders.test.ts [2m([22m[2m31 tests[22m[2m)[22m[90m 21[2mms[22m[39m
+ [31mΓ¥»[39m test/validators.test.ts [2m([22m[2m41 tests[22m[2m | [22m[31m7 failed[39m[2m | [22m[33m1 skipped[39m[2m)[22m[90m 100[2mms[22m[39m
+[31m   [31m├ù[31m Validators[2m > [22marray validators[2m > [22mshould validate arrays[90m 14[2mms[22m[31m[39m
+[31m     ΓåÆ Cannot read properties of undefined (reading 'run')[39m
+[31m   [31m├ù[31m Validators[2m > [22marray validators[2m > [22mshould validate array length[90m 2[2mms[22m[31m[39m
+[31m     ΓåÆ Cannot read properties of undefined (reading 'run')[39m
+[31m   [31m├ù[31m Validators[2m > [22mobject validators[2m > [22mshould validate objects[90m 3[2mms[22m[31m[39m
+[31m     ΓåÆ Invalid element at key "name": expected a Zod schema[39m
+[31m   [31m├ù[31m Validators[2m > [22mobject validators[2m > [22mshould handle nested objects[90m 8[2mms[22m[31m[39m
+[31m     ΓåÆ Invalid element at key "name": expected a Zod schema[39m
+[31m   [31m├ù[31m Validators[2m > [22mobject validators[2m > [22mshould handle optional fields[90m 1[2mms[22m[31m[39m
+[31m     ΓåÆ Invalid element at key "name": expected a Zod schema[39m
+[31m   [31m├ù[31m Validators[2m > [22munion validators[2m > [22mshould validate union types[90m 2[2mms[22m[31m[39m
+[31m     ΓåÆ Cannot read properties of undefined (reading 'run')[39m
+[31m   [31m├ù[31m Validators[2m > [22merror handling[2m > [22mshould provide detailed error messages[90m 3[2mms[22m[31m[39m
+[31m     ΓåÆ expected undefined to be truthy[39m
+ [32mΓ£ô[39m test/index.test.ts [2m([22m[2m9 tests[22m[2m)[22m[90m 13[2mms[22m[39m
+ [32mΓ£ô[39m test/utils.test.ts [2m([22m[2m37 tests[22m[2m)[22m[33m 347[2mms[22m[39m
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ» Failed Tests 7 ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»
+
+ FAIL  test/validators.test.ts > Validators > array validators > should validate arrays
+TypeError: Cannot read properties of undefined (reading 'run')
+ Γ¥» Object.inst._zod.parse node_modules/zod/v4/core/schemas.js:688:45
+ Γ¥» Module.<anonymous> node_modules/zod/v4/core/parse.js:6:32
+ Γ¥» _.inst.parse node_modules/zod/v4/classic/schemas.js:27:42
+ Γ¥» test/validators.test.ts:98:24
+     96|     it('should validate arrays', () => {
+     97|       const validator = validators.array(validators.string);
+     98|       expect(validator.parse(['a', 'b', 'c'])).toEqual(['a', 'b', 'c']ΓÇª
+       |                        ^
+     99|       expect(() => validator.parse(['a', 1, 'c'])).toThrow();
+    100|     });
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[1/7]ΓÄ»
+
+ FAIL  test/validators.test.ts > Validators > array validators > should validate array length
+TypeError: Cannot read properties of undefined (reading 'run')
+ Γ¥» Object.inst._zod.parse node_modules/zod/v4/core/schemas.js:688:45
+ Γ¥» Object.inst._zod.run node_modules/zod/v4/core/schemas.js:116:38
+ Γ¥» Module.<anonymous> node_modules/zod/v4/core/parse.js:6:32
+ Γ¥» _.inst.parse node_modules/zod/v4/classic/schemas.js:27:42
+ Γ¥» test/validators.test.ts:104:24
+    102|     it('should validate array length', () => {
+    103|       const validator = validators.arrayMin(validators.string, 2);
+    104|       expect(validator.parse(['a', 'b'])).toEqual(['a', 'b']);
+       |                        ^
+    105|       expect(() => validator.parse(['a'])).toThrow();
+    106|     });
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[2/7]ΓÄ»
+
+ FAIL  test/validators.test.ts > Validators > object validators > should validate objects
+Error: Invalid element at key "name": expected a Zod schema
+ Γ¥» normalizeDef node_modules/zod/v4/core/schemas.js:722:19
+ Γ¥» node_modules/zod/v4/core/schemas.js:838:43
+ Γ¥» Object.get value [as value] node_modules/zod/v4/core/util.js:33:31
+ Γ¥» Object.inst._zod.parse node_modules/zod/v4/core/schemas.js:890:39
+ Γ¥» Module.<anonymous> node_modules/zod/v4/core/parse.js:6:32
+ Γ¥» _.inst.parse node_modules/zod/v4/classic/schemas.js:27:42
+ Γ¥» test/validators.test.ts:121:32
+    119|       });
+    120| 
+    121|       const result = validator.parse({ name: 'John', age: 30 });
+       |                                ^
+    122|       expect(result).toEqual({ name: 'John', age: 30 });
+    123|     });
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[3/7]ΓÄ»
+
+ FAIL  test/validators.test.ts > Validators > object validators > should handle nested objects
+Error: Invalid element at key "name": expected a Zod schema
+ Γ¥» normalizeDef node_modules/zod/v4/core/schemas.js:722:19
+ Γ¥» node_modules/zod/v4/core/schemas.js:838:43
+ Γ¥» Object.get value [as value] node_modules/zod/v4/core/util.js:33:31
+ Γ¥» Object.inst._zod.parse node_modules/zod/v4/core/schemas.js:890:39
+ Γ¥» eval node_modules/zod/v4/core/doc.js:33:16
+ Γ¥» node_modules/zod/v4/core/schemas.js:880:34
+ Γ¥» Object.inst._zod.parse node_modules/zod/v4/core/schemas.js:905:23
+ Γ¥» Module.<anonymous> node_modules/zod/v4/core/parse.js:6:32
+ Γ¥» _.inst.parse node_modules/zod/v4/classic/schemas.js:27:42
+ Γ¥» test/validators.test.ts:142:32
+    140|       });
+    141| 
+    142|       const result = validator.parse({
+       |                                ^
+    143|         user: { name: 'John', email: 'john@example.com' },
+    144|       });
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[4/7]ΓÄ»
+
+ FAIL  test/validators.test.ts > Validators > object validators > should handle optional fields
+Error: Invalid element at key "name": expected a Zod schema
+ Γ¥» normalizeDef node_modules/zod/v4/core/schemas.js:722:19
+ Γ¥» node_modules/zod/v4/core/schemas.js:838:43
+ Γ¥» Object.get value [as value] node_modules/zod/v4/core/util.js:33:31
+ Γ¥» Object.inst._zod.parse node_modules/zod/v4/core/schemas.js:890:39
+ Γ¥» Module.<anonymous> node_modules/zod/v4/core/parse.js:6:32
+ Γ¥» _.inst.parse node_modules/zod/v4/classic/schemas.js:27:42
+ Γ¥» test/validators.test.ts:155:24
+    153|       });
+    154| 
+    155|       expect(validator.parse({ name: 'John' })).toEqual({ name: 'John'ΓÇª
+       |                        ^
+    156|       expect(validator.parse({ name: 'John', email: 'john@example.com'ΓÇª
+    157|         name: 'John',
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[5/7]ΓÄ»
+
+ FAIL  test/validators.test.ts > Validators > union validators > should validate union types
+TypeError: Cannot read properties of undefined (reading 'run')
+ Γ¥» node_modules/zod/v4/core/schemas.js:951:39
+ Γ¥» $ZodUnion.init node_modules/zod/v4/core/core.js:14:9
+ Γ¥» node_modules/zod/v4/classic/schemas.js:565:20
+ Γ¥» init node_modules/zod/v4/core/core.js:14:9
+ Γ¥» new ZodUnion node_modules/zod/v4/core/core.js:31:9
+ Γ¥» Module.union node_modules/zod/v4/classic/schemas.js:570:12
+ Γ¥» Object.union src/validators.ts:106:7
+    104|   // Unions and intersections
+    105|   union: <T extends readonly [z.ZodTypeAny, z.ZodTypeAny, ...z.ZodTypeΓÇª
+    106|     z.union(schemas) as StandardSchema<z.infer<T[number]>>,
+       |       ^
+    107| 
+    108|   // Enums
+ Γ¥» test/validators.test.ts:182:36
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[6/7]ΓÄ»
+
+ FAIL  test/validators.test.ts > Validators > error handling > should provide detailed error messages
+AssertionError: expected undefined to be truthy
+
+- Expected: 
+true
+
++ Received: 
+undefined
+
+ Γ¥» test/validators.test.ts:297:30
+    295|         expect(true).toBe(false); // Should not reach here
+    296|       } catch (error: any) {
+    297|         expect(error.errors).toBeTruthy();
+       |                              ^
+    298|         expect(error.errors.length).toBeGreaterThan(0);
+    299|       }
+
+ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[7/7]ΓÄ»
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m9 passed[39m[22m[90m (10)[39m
+[2m      Tests [22m [1m[31m7 failed[39m[22m[2m | [22m[1m[32m254 passed[39m[22m[2m | [22m[33m1 skipped[39m[90m (262)[39m
+[2m   Start at [22m 11:01:31
+[2m   Duration [22m 1.34s[2m (transform 1.21s, setup 0ms, collect 3.13s, tests 616ms, environment 3ms, prepare 2.40s)[22m
+

@@ -1,12 +1,17 @@
 /**
  * Validation System
  * StandardSchema-compliant validators using Zod
+ * 
+ * This module provides validators that implement the Standard Schema V1 interface.
+ * Zod 3.24+ natively implements Standard Schema via the '~standard' property.
+ * 
+ * The validators can be used with any tool that accepts Standard Schema compatible validators.
  */
 
 import { z } from 'zod'
 
-// StandardSchema type (Zod 3.24+ implements this via ~standard property)
-// Using Zod's built-in schema type which is StandardSchema compliant
+// Standard Schema V1 interface (Zod 3.24+ implements this natively)
+// We use Zod's ZodType which has the '~standard' property
 export type StandardSchema<T = any> = z.ZodType<T>
 
 /**
@@ -60,50 +65,51 @@ const stringValidator = Object.assign(
 
 /**
  * Standard Schema validators using Zod
+ * 
+ * All validators are raw Zod schemas which natively implement Standard Schema V1.
+ * No wrapping or casting needed - Zod v3.24+ has the '~standard' property built-in.
  */
 export const validators = {
-  // String validators (can be used as both static schema and factory function)
-  string: stringValidator as StandardSchema<string> & (() => StandardSchema<string>),
-  email: z.string().email('Invalid email address') as StandardSchema<string>,
-  url: z.string().url('Invalid URL') as StandardSchema<string>,
-  uuid: z.string().uuid() as StandardSchema<string>,
+  // String validators
+  string: z.string(),
+  email: z.string().email('Invalid email address'),
+  url: z.string().url('Invalid URL'),
+  uuid: z.string().uuid(),
 
   // String with constraints
   stringMin: (min: number, message?: string) =>
-    z.string().min(min, message || `Must be at least ${min} characters`) as StandardSchema<string>,
+    z.string().min(min, message || `Must be at least ${min} characters`),
   stringMax: (max: number, message?: string) =>
-    z.string().max(max, message || `Must be at most ${max} characters`) as StandardSchema<string>,
+    z.string().max(max, message || `Must be at most ${max} characters`),
   stringLength: (min: number, max: number) =>
-    z.string().min(min).max(max) as StandardSchema<string>,
+    z.string().min(min).max(max),
 
   // Number validators
-  number: z.number() as StandardSchema<number>,
-  positiveNumber: z.number().positive('Must be positive') as StandardSchema<number>,
-  nonNegativeNumber: z.number().nonnegative('Must be non-negative') as StandardSchema<number>,
-  integer: z.number().int('Must be an integer') as StandardSchema<number>,
+  number: z.number(),
+  positiveNumber: z.number().positive('Must be positive'),
+  nonNegativeNumber: z.number().nonnegative('Must be non-negative'),
+  integer: z.number().int('Must be an integer'),
 
   // Number with constraints
-  numberMin: (min: number) => z.number().min(min) as StandardSchema<number>,
-  numberMax: (max: number) => z.number().max(max) as StandardSchema<number>,
-  numberRange: (min: number, max: number) => z.number().min(min).max(max) as StandardSchema<number>,
+  numberMin: (min: number) => z.number().min(min),
+  numberMax: (max: number) => z.number().max(max),
+  numberRange: (min: number, max: number) => z.number().min(min).max(max),
 
   // Boolean
-  boolean: z.boolean() as StandardSchema<boolean>,
+  boolean: z.boolean(),
 
   // Arrays
-  stringArray: z.array(z.string()) as StandardSchema<string[]>,
-  numberArray: z.array(z.number()) as StandardSchema<number[]>,
-  array: <T extends z.ZodType>(schema: T) =>
-    z.array(schema) as StandardSchema<z.infer<T>[]>,
-  arrayMin: <T extends z.ZodType>(schema: T, min: number) =>
-    z.array(schema).min(min) as StandardSchema<z.infer<T>[]>,
+  stringArray: z.array(z.string()),
+  numberArray: z.array(z.number()),
+  array: <T extends z.ZodType>(schema: T) => z.array(schema),
+  arrayMin: <T extends z.ZodType>(schema: T, min: number) => z.array(schema).min(min),
 
   // Objects
-  object: <T extends z.ZodRawShape>(shape: T) => z.object(shape) as StandardSchema<z.infer<z.ZodObject<T>>>,
+  object: <T extends z.ZodRawShape>(shape: T) => z.object(shape),
 
   // Unions and intersections
   union: <T extends readonly [z.ZodTypeAny, z.ZodTypeAny, ...z.ZodTypeAny[]]>(schemas: T) =>
-    z.union(schemas) as StandardSchema<z.infer<T[number]>>,
+    z.union(schemas),
 
   // Enums
   enum: <T extends readonly (string | number)[]>(values: T) => {
