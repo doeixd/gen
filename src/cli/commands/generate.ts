@@ -26,6 +26,7 @@ import { generateDatabase } from '../generate.js'
 import { generateCrud } from '../generate.js'
 import { generateConvex } from '../generate.js'
 import { generateForms } from '../generate.js'
+import { generateTables } from '../generate.js'
 import { generateAPI } from '../generate.js'
 import { generateFrontend } from '../generate.js'
 import { generateTests } from '../generate.js'
@@ -36,7 +37,7 @@ export function createGenerateCommand(): Command {
     .alias('gen')
     .alias('g')
     .description('Generate code from entity definitions')
-    .argument('[targets...]', 'generation targets (database, api, frontend, crud, convex, forms, rails, nextjs, openapi, tests, docs, deployment)')
+    .argument('[targets...]', 'generation targets (database, api, frontend, crud, convex, forms, tables, rails, nextjs, openapi, tests, docs, deployment)')
     .option('-c, --config <path>', 'path to config file')
     .option('-s, --schema <path>', 'path to schema file')
     .option('-o, --output <path>', 'output directory')
@@ -146,7 +147,7 @@ export function createGenerateCommand(): Command {
 
       // Determine targets
       const allTargets = [
-        'database', 'api', 'frontend', 'crud', 'convex', 'forms', 'rails', 'nextjs', 'openapi', 'tests', 'docs', 'deployment'
+        'database', 'api', 'frontend', 'crud', 'convex', 'forms', 'tables', 'rails', 'nextjs', 'openapi', 'tests', 'docs', 'deployment'
       ]
       const requestedTargets = targets.length > 0 ? targets : config.targets
 
@@ -189,6 +190,9 @@ export function createGenerateCommand(): Command {
             break
           case 'forms':
             generationPromises.push(generateForms(generatorArgs))
+            break
+          case 'tables':
+            generationPromises.push(generateTables(generatorArgs))
             break
           case 'tests':
             generationPromises.push(generateTests(generatorArgs))

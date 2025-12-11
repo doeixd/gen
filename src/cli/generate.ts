@@ -53,6 +53,11 @@ import {
   generateCrudRoutes,
   generateConvexFunctions,
   generateTanStackForm,
+  generateTanStackFormFactory,
+  generateTanStackFormComponents,
+  generateTanStackTable,
+  generateTanStackTableFactory,
+  generateTanStackTableComponents,
   generateRailsRoutes,
   generateNextJsAPI,
   generateOpenAPI,
@@ -67,6 +72,7 @@ import {
   type CrudRoutesTemplateOptions,
   type ConvexFunctionsTemplateOptions,
   type TanStackFormTemplateOptions,
+  type TanStackTableTemplateOptions,
   type RailsRoutesTemplateOptions,
   type NextJsAPITemplateOptions,
   type OpenAPITemplateOptions,
@@ -211,6 +217,33 @@ async function generateForms(args: GeneratorArgs): Promise<Result<void, Generato
     const formsDirResult = ensureDirectory(path.join(config.paths.frontend, 'components', 'forms'))
     if (formsDirResult.isErr()) return err(formsDirResult.error)
 
+    // Generate shared form infrastructure
+    const factoryCode = generateTanStackFormFactory()
+    const factoryPath = path.join(config.paths.frontend, 'components', 'forms', 'form-factory.tsx')
+    const factoryWriteResult = writeFile(factoryPath, factoryCode, {
+      overwrite: config.overwrite,
+      backup: config.createBackups,
+      dryRun: config.dryRun
+    })
+
+    if (factoryWriteResult.isErr()) {
+      return err(factoryWriteResult.error)
+    }
+    logger.success('Generated form-factory.tsx')
+
+    const componentsCode = generateTanStackFormComponents()
+    const componentsPath = path.join(config.paths.frontend, 'components', 'forms', 'form-components.tsx')
+    const componentsWriteResult = writeFile(componentsPath, componentsCode, {
+      overwrite: config.overwrite,
+      backup: config.createBackups,
+      dryRun: config.dryRun
+    })
+
+    if (componentsWriteResult.isErr()) {
+      return err(componentsWriteResult.error)
+    }
+    logger.success('Generated form-components.tsx')
+
     for (const entity of entities) {
       logger.subsection(`Processing ${entity.name.singular}`)
 
@@ -226,6 +259,78 @@ async function generateForms(args: GeneratorArgs): Promise<Result<void, Generato
       const filePath = path.join(config.paths.frontend, 'components', 'forms', fileName)
 
       const writeResult = writeFile(filePath, formComponent, {
+        createDirectories: true,
+        addHeader: config.header.includeHeader,
+        eslintDisable: config.header.eslintDisable,
+      })
+
+      if (writeResult.isErr()) {
+        return err(writeResult.error)
+      }
+
+      logger.success(`Generated ${fileName}`)
+    }
+
+    return ok(undefined)
+  } catch (error) {
+    return err(fromError(error))
+  }
+}
+
+/**
+ * Generate tables for all entities
+ */
+export async function generateTables(args: GeneratorArgs): Promise<Result<void, GeneratorError>> {
+  try {
+    const { config, entities } = args
+    logger.section('📊 Generating Tables')
+
+    // Ensure output directories exist
+    const tablesDirResult = ensureDirectory(path.join(config.paths.frontend, 'components', 'tables'))
+    if (tablesDirResult.isErr()) return err(tablesDirResult.error)
+
+    // Generate shared table infrastructure
+    const factoryCode = generateTanStackTableFactory()
+    const factoryPath = path.join(config.paths.frontend, 'components', 'tables', 'table-factory.tsx')
+    const factoryWriteResult = writeFile(factoryPath, factoryCode, {
+      overwrite: config.overwrite,
+      backup: config.createBackups,
+      dryRun: config.dryRun
+    })
+
+    if (factoryWriteResult.isErr()) {
+      return err(factoryWriteResult.error)
+    }
+    logger.success('Generated table-factory.tsx')
+
+    const componentsCode = generateTanStackTableComponents()
+    const componentsPath = path.join(config.paths.frontend, 'components', 'tables', 'table-components.tsx')
+    const componentsWriteResult = writeFile(componentsPath, componentsCode, {
+      overwrite: config.overwrite,
+      backup: config.createBackups,
+      dryRun: config.dryRun
+    })
+
+    if (componentsWriteResult.isErr()) {
+      return err(componentsWriteResult.error)
+    }
+    logger.success('Generated table-components.tsx')
+
+    for (const entity of entities) {
+      logger.subsection(`Processing ${entity.name.singular}`)
+
+      const tableOptions: TanStackTableTemplateOptions = {
+        entity,
+        preset: 'standard', // Default to standard preset
+        permissions: true,
+      }
+
+      const tableComponent = generateTanStackTable(tableOptions)
+
+      const fileName = `${entity.name.singular}Table.tsx`
+      const filePath = path.join(config.paths.frontend, 'components', 'tables', fileName)
+
+      const writeResult = writeFile(filePath, tableComponent, {
         createDirectories: true,
         addHeader: config.header.includeHeader,
         eslintDisable: config.header.eslintDisable,
@@ -1084,6 +1189,10 @@ async function main(): Promise<void> {
 
     if (config.targets.includes('forms')) {
       generationPromises.push(generateForms(generatorArgs))
+    }
+
+    if (config.targets.includes('tables')) {
+      generationPromises.push(generateTables(generatorArgs))
     }
 
     if (config.targets.includes('rails')) {

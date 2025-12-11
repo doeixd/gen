@@ -16,252 +16,46 @@ export interface TanStackFormTemplateOptions {
 export function generateTanStackForm(options: TanStackFormTemplateOptions): string {
   const { entity, includeValidation = true, includeErrorHandling = true } = options
   const entityName = entity.name.singular
-  const pluralName = entity.name.plural
   const tableName = entity.db.table.name
   const editableFields = getEditableFields(entity)
 
   return ts`
-import { useForm, useAppForm } from '@tanstack/react-form'
-import { useField, Field, FieldInfo } from '@tanstack/react-form'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { z } from 'zod'
-import pluralize from 'pluralize'
-
-// Import collection
-import { ${pluralize.singular(tableName)}Collection } from '~/lib/collections'
+import { useAppForm } from './form-factory'
 
 // Zod validation schema
 ${conditional(includeValidation, `
 const ${entityName}Schema = z.object({
 ${map(editableFields, (field) => {
-  const fieldDef = entity.fields[field]
-  const fieldName = String(field)
-  const fieldType = fieldDef.jsType || 'string'
-  const isOptional = fieldDef.optional
+    const fieldName = String(field)
+    const fieldDef = entity.fields[fieldName]
+    const fieldType = fieldDef.jsType || 'string'
+    const isOptional = fieldDef.optional
 
-  let zodType: string
-  switch (fieldType) {
-    case 'string':
-      zodType = 'z.string()'
-      break
-    case 'number':
-      zodType = 'z.number()'
-      break
-    case 'boolean':
-      zodType = 'z.boolean()'
-      break
-    default:
-      zodType = 'z.any()'
-  }
+    let zodType: string
+    switch (fieldType) {
+      case 'string':
+        zodType = 'z.string()'
+        if (!isOptional) {
+          zodType += `.min(1, '${fieldName} is required')`
+        }
+        break
+      case 'number':
+        zodType = 'z.number()'
+        break
+      case 'boolean':
+        zodType = 'z.boolean()'
+        break
+      default:
+        zodType = 'z.any()'
+    }
 
-  if (!isOptional) {
-    zodType += `.min(1, '${fieldName} is required')`
-  }
-
-  return `  ${fieldName}: ${isOptional ? `z.optional(${zodType})` : zodType},`
+    return `  ${fieldName}: ${isOptional ? `z.optional(${zodType})` : zodType},`
 })}
 })
 `)}
 type ${entityName}FormData = z.infer<typeof ${entityName}Schema>
-
-// Form field components
-function TextField({ name, label, type = 'text', placeholder, required }: {
-  name: string
-  label: string
-  type?: string
-  placeholder?: string
-  required?: boolean
-}) {
-  return (
-    <Field
-      name={name}
-      validators={{
-        onChange: includeValidation ? ${entityName}Schema.shape[name as keyof typeof ${entityName}Schema] : undefined,
-      }}
-      children={(field) => (
-        <div className="space-y-2">
-          <label htmlFor={name} className="block text-sm font-medium text-gray-700">
-            {label} {required && <span className="text-red-500">*</span>}
-          </label>
-          <input
-            id={name}
-            name={name}
-            type={type}
-            placeholder={placeholder}
-            value={field.state.value || ''}
-            onBlur={field.handleBlur}
-            onChange={(e) => field.handleChange(e.target.value)}
-            className={\`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent \${
-              field.state.meta.errors.length > 0
-                ? 'border-red-300 focus:ring-red-500'
-                : 'border-gray-300'
-            }\`}
-          />
-          {field.state.meta.errors.length > 0 && (
-            <p className="text-sm text-red-600">{field.state.meta.errors[0]}</p>
-          )}
-        </div>
-      )}
-    />
-  )
-}
-
-function NumberField({ name, label, placeholder, required, min, max }: {
-  name: string
-  label: string
-  placeholder?: string
-  required?: boolean
-  min?: number
-  max?: number
-}) {
-  return (
-    <Field
-      name={name}
-      validators={{
-        onChange: includeValidation ? ${entityName}Schema.shape[name as keyof typeof ${entityName}Schema] : undefined,
-      }}
-      children={(field) => (
-        <div className="space-y-2">
-          <label htmlFor={name} className="block text-sm font-medium text-gray-700">
-            {label} {required && <span className="text-red-500">*</span>}
-          </label>
-          <input
-            id={name}
-            name={name}
-            type="number"
-            placeholder={placeholder}
-            min={min}
-            max={max}
-            value={field.state.value || ''}
-            onBlur={field.handleBlur}
-            onChange={(e) => field.handleChange(Number(e.target.value) || 0)}
-            className={\`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent \${
-              field.state.meta.errors.length > 0
-                ? 'border-red-300 focus:ring-red-500'
-                : 'border-gray-300'
-            }\`}
-          />
-          {field.state.meta.errors.length > 0 && (
-            <p className="text-sm text-red-600">{field.state.meta.errors[0]}</p>
-          )}
-        </div>
-      )}
-    />
-  )
-}
-
-function TextArea({ name, label, placeholder, required, rows = 4 }: {
-  name: string
-  label: string
-  placeholder?: string
-  required?: boolean
-  rows?: number
-}) {
-  return (
-    <Field
-      name={name}
-      validators={{
-        onChange: includeValidation ? ${entityName}Schema.shape[name as keyof typeof ${entityName}Schema] : undefined,
-      }}
-      children={(field) => (
-        <div className="space-y-2">
-          <label htmlFor={name} className="block text-sm font-medium text-gray-700">
-            {label} {required && <span className="text-red-500">*</span>}
-          </label>
-          <textarea
-            id={name}
-            name={name}
-            rows={rows}
-            placeholder={placeholder}
-            value={field.state.value || ''}
-            onBlur={field.handleBlur}
-            onChange={(e) => field.handleChange(e.target.value)}
-            className={\`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent \${
-              field.state.meta.errors.length > 0
-                ? 'border-red-300 focus:ring-red-500'
-                : 'border-gray-300'
-            }\`}
-          />
-          {field.state.meta.errors.length > 0 && (
-            <p className="text-sm text-red-600">{field.state.meta.errors[0]}</p>
-          )}
-        </div>
-      )}
-    />
-  )
-}
-
-function Checkbox({ name, label }: {
-  name: string
-  label: string
-}) {
-  return (
-    <Field
-      name={name}
-      children={(field) => (
-        <div className="flex items-center space-x-2">
-          <input
-            id={name}
-            name={name}
-            type="checkbox"
-            checked={field.state.value || false}
-            onChange={(e) => field.handleChange(e.target.checked)}
-            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-          />
-          <label htmlFor={name} className="text-sm font-medium text-gray-700">
-            {label}
-          </label>
-        </div>
-      )}
-    />
-  )
-}
-
-function Select({ name, label, options, required }: {
-  name: string
-  label: string
-  options: { value: string; label: string }[]
-  required?: boolean
-}) {
-  return (
-    <Field
-      name={name}
-      validators={{
-        onChange: includeValidation ? ${entityName}Schema.shape[name as keyof typeof ${entityName}Schema] : undefined,
-      }}
-      children={(field) => (
-        <div className="space-y-2">
-          <label htmlFor={name} className="block text-sm font-medium text-gray-700">
-            {label} {required && <span className="text-red-500">*</span>}
-          </label>
-          <select
-            id={name}
-            name={name}
-            value={field.state.value || ''}
-            onBlur={field.handleBlur}
-            onChange={(e) => field.handleChange(e.target.value)}
-            className={\`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent \${
-              field.state.meta.errors.length > 0
-                ? 'border-red-300 focus:ring-red-500'
-                : 'border-gray-300'
-            }\`}
-          >
-            <option value="">Select an option</option>
-            {options.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-          {field.state.meta.errors.length > 0 && (
-            <p className="text-sm text-red-600">{field.state.meta.errors[0]}</p>
-          )}
-        </div>
-      )}
-    />
-  )
-}
 
 // Main form component
 export interface ${entityName}FormProps {
@@ -271,51 +65,49 @@ export interface ${entityName}FormProps {
 }
 
 export function ${entityName}Form({ initialData, onSuccess, onCancel }: ${entityName}FormProps) {
-  const queryClient = useQueryClient()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
-  const form = useForm({
+  const form = useAppForm({
     defaultValues: {
 ${map(editableFields, (field) => {
-  const fieldDef = entity.fields[field]
-  const defaultValue = fieldDef.defaultValue
-  const fieldType = fieldDef.jsType || 'string'
+        const fieldName = String(field)
+        const fieldDef = entity.fields[fieldName]
+        const defaultValue = fieldDef.defaultValue
+        const fieldType = fieldDef.jsType || 'string'
 
-  let defaultVal: string
-  switch (fieldType) {
-    case 'string':
-      defaultVal = defaultValue ? `"${defaultValue}"` : '""'
-      break
-    case 'number':
-      defaultVal = String(defaultValue || 0)
-      break
-    case 'boolean':
-      defaultVal = String(defaultValue || false)
-      break
-    default:
-      defaultVal = 'undefined'
-  }
+        let defaultVal: string
+        switch (fieldType) {
+          case 'string':
+            defaultVal = defaultValue ? `"${defaultValue}"` : '""'
+            break
+          case 'number':
+            defaultVal = String(defaultValue || 0)
+            break
+          case 'boolean':
+            defaultVal = String(defaultValue || false)
+            break
+          default:
+            defaultVal = 'undefined'
+        }
 
-  return `      ${String(field)}: ${defaultVal},`
+        return `      ${String(field)}: ${defaultVal},`
 })}
       ...initialData,
     } as ${entityName}FormData,
+    validators: {
+      onChange: ${includeValidation ? `${entityName}Schema` : 'undefined'},
+    },
     onSubmit: async ({ value }) => {
       setIsSubmitting(true)
       setSubmitError(null)
 
       try {
-        let result
-        if (initialData?.id) {
-          // Update existing
-          const tx = ${pluralize.singular(tableName)}Collection.update(initialData.id, value)
-          result = await tx.isPersisted.promise
-        } else {
-          // Create new
-          const tx = ${pluralize.singular(tableName)}Collection.insert(value)
-          result = await tx.isPersisted.promise
-        }
+        // TODO: Replace with your backend API call
+        // Example: const result = await fetch('/api/${tableName}', { method: initialData?.id ? 'PUT' : 'POST', body: JSON.stringify(value) })
+
+        // For now, simulate success and pass the data to onSuccess callback
+        const result = { ...value, id: initialData?.id || 'new-id' } as ${entityName}FormData & { id: string }
 
         onSuccess?.(result)
       } catch (error) {
@@ -341,55 +133,77 @@ ${conditional(includeErrorHandling, `
       >
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
 ${map(editableFields, (field) => {
-  const fieldDef = entity.fields[field]
-  const fieldName = String(field)
-  const fieldType = fieldDef.jsType || 'string'
-  const inputComponent = fieldDef.inputComponent as string
-  const isRequired = !fieldDef.optional
+              const fieldName = String(field)
+              const fieldDef = entity.fields[fieldName]
+              const fieldType = fieldDef.jsType || 'string'
+              // Extract component name if it's a ComponentWithProps, otherwise use the component type directly
+              const inputComponent = typeof fieldDef.inputComponent === 'object' && fieldDef.inputComponent !== null && 'component' in fieldDef.inputComponent
+                ? String(fieldDef.inputComponent.component)
+                : String(fieldDef.inputComponent || 'TextField')
+              const isRequired = !fieldDef.optional
 
-  if (inputComponent === 'TextArea') {
-    return `
+              if (inputComponent === 'TextArea') {
+                return `
           <div className="sm:col-span-2">
-            <TextArea
+            <form.AppField
               name="${fieldName}"
-              label="${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}"
-              required={${isRequired}}
+              children={(field) => (
+                <field.TextArea
+                  label="${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}"
+                  required={${isRequired}}
+                />
+              )}
             />
           </div>`
-  } else if (inputComponent === 'NumberField') {
-    return `
-          <NumberField
+              } else if (inputComponent === 'NumberField') {
+                return `
+          <form.AppField
             name="${fieldName}"
-            label="${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}"
-            required={${isRequired}}
+            children={(field) => (
+              <field.NumberField
+                label="${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}"
+                required={${isRequired}}
+              />
+            )}
           />`
-  } else if (inputComponent === 'Checkbox') {
-    return `
+              } else if (inputComponent === 'Checkbox') {
+                return `
           <div className="sm:col-span-2">
-            <Checkbox
+            <form.AppField
               name="${fieldName}"
-              label="${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}"
+              children={(field) => (
+                <field.Checkbox
+                  label="${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}"
+                />
+              )}
             />
           </div>`
-  } else if (inputComponent === 'Select') {
-    // For select, we'd need options - this is a placeholder
-    return `
-          <Select
+              } else if (inputComponent === 'Select') {
+                return `
+          <form.AppField
             name="${fieldName}"
-            label="${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}"
-            options={[]} // TODO: Add options
-            required={${isRequired}}
+            children={(field) => (
+              <field.Select
+                label="${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}"
+                options={[]} // TODO: Add options
+                required={${isRequired}}
+              />
+            )}
           />`
-  } else {
-    return `
-          <TextField
+              } else {
+                return `
+          <form.AppField
             name="${fieldName}"
-            label="${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}"
-            type="${fieldType === 'number' ? 'number' : 'text'}"
-            required={${isRequired}}
+            children={(field) => (
+              <field.TextField
+                label="${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}"
+                type="${fieldType === 'number' ? 'number' : 'text'}"
+                required={${isRequired}}
+              />
+            )}
           />`
-  }
-})}
+              }
+            })}
         </div>
 
 ${conditional(includeErrorHandling, `
@@ -427,10 +241,10 @@ ${conditional(includeErrorHandling, `
             children={([canSubmit, isFormSubmitting]) => (
               <button
                 type="submit"
-                disabled={!canSubmit || isFormSubmitting || isSubmitting}
+                disabled={!canSubmit || isFormSubmitting}
                 className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isSubmitting ? 'Saving...' : initialData ? 'Update ${entityName}' : 'Create ${entityName}'}
+                {isFormSubmitting ? 'Submitting...' : initialData?.id ? 'Update' : 'Create'}
               </button>
             )}
           />
@@ -440,4 +254,4 @@ ${conditional(includeErrorHandling, `
   )
 }
 `
-}
+        }

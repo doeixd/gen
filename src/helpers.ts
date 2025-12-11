@@ -403,5 +403,98 @@ return tableExclusions.includes(fieldName)
 */
 function isExcludedFromList(tableName: string, fieldName: string): boolean {
   const tableExclusions = _excludeFromList[tableName] || []
-return tableExclusions.includes(fieldName)
+  return tableExclusions.includes(fieldName)
+}
+
+/**
+ * Convert Entity field configurations to TanStack Table ColumnDef array (as code string)
+ * This helper generates column definitions based on the entity's field mappings
+ *
+ * @param entity - The entity to generate columns for
+ * @param options - Configuration options for column generation
+ * @returns TypeScript code string for column definitions array
+ *
+ * @example
+ * const columns = entityToColumnDefs(userEntity, {
+ *   includeActions: true,
+ *   includeSelection: true,
+ *   excludeFields: ['password']
+ * })
+ */
+export function entityToColumnDefs<T>(
+  entity: Entity<T>,
+  options: {
+    includeActions?: boolean
+    includeSelection?: boolean
+    excludeFields?: string[]
+  } = {}
+): string {
+  const { includeActions = true, includeSelection = false, excludeFields = [] } = options
+
+  // Get all field names from entity
+  const allFields = Object.keys(entity.fields) as Array<keyof T>
+
+  // Filter out excluded fields and fields marked to exclude from list
+  const fields = allFields.filter(
+    field => !excludeFields.includes(String(field)) && !entity.fields[field].excludeFromList
+  )
+
+  const columnDefs: string[] = []
+
+  // Add selection column if requested
+  if (includeSelection) {
+    columnDefs.push(`  {
+    id: 'select',
+    header: ({ table }) => <SelectAllHeader table={table} />,
+    cell: ({ row }) => <SelectCell row={row} />,
+    enableSorting: false,
+    enableFiltering: false
+  }`)
+  }
+
+  // Generate column definitions for each field
+  for (const field of fields) {
+    const fieldConfig = entity.fields[field]
+    const fieldName = String(field)
+    const displayComponent = fieldConfig.displayComponent
+
+    // Map display component to cell renderer
+    let cellRenderer = 'TextCell'
+    if (displayComponent === 'Number' as any) cellRenderer = 'NumberCell'
+    else if (displayComponent === 'Currency' as any) cellRenderer = 'CurrencyCell'
+    else if (displayComponent === 'DateTime' as any) cellRenderer = 'DateTimeCell'
+    else if (displayComponent === 'Badge' as any) cellRenderer = 'BadgeCell'
+    else if (displayComponent === 'Link' as any) cellRenderer = 'LinkCell'
+    else if (displayComponent === 'Email' as any) cellRenderer = 'EmailCell'
+    else if (displayComponent === 'Image' as any) cellRenderer = 'ImageCell'
+    else if (displayComponent === 'Avatar' as any) cellRenderer = 'AvatarCell'
+
+    // Determine if the field should be sortable and filterable
+    const sortable = fieldConfig.sortable !== false
+    const filterable = fieldConfig.filterable !== false
+
+    // Format field name for display (capitalize first letter)
+    const displayName = fieldName.charAt(0).toUpperCase() + fieldName.slice(1)
+
+    columnDefs.push(`  {
+    accessorKey: '${fieldName}',
+    header: ({ column }) => (
+      <SortableHeader column={column} label="${displayName}" />
+    ),
+    cell: ${cellRenderer},
+    enableSorting: ${sortable},
+    enableFiltering: ${filterable}
+  }`)
+  }
+
+  // Add actions column if requested
+  if (includeActions) {
+    columnDefs.push(`  createActionsCell({
+    onView: props.onView,
+    onEdit: props.onEdit,
+    onDelete: props.onDelete
+  })`)
+  }
+
+  return `[\n${columnDefs.join(',\n')}\n]`
 }

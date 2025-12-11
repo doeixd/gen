@@ -50,9 +50,40 @@ export {
 } from './convex-functions.template'
 
 export {
+  generateEnhancedConvexFunctions,
+  type EnhancedConvexFunctionsTemplateOptions,
+} from './convex-functions-enhanced.template'
+
+export {
   generateTanStackForm,
   type TanStackFormTemplateOptions,
 } from './tanstack-form.template'
+
+export {
+  generateTanStackFormFactory,
+} from './tanstack-form-factory.template'
+
+export {
+  generateTanStackFormComponents,
+} from './tanstack-form-components.template'
+
+export {
+  generateTanStackTable,
+  type TanStackTableTemplateOptions,
+} from './tanstack-table.template'
+
+export {
+  generateTanStackTableFactory,
+} from './tanstack-table-factory.template'
+
+export {
+  generateTanStackTableComponents,
+} from './tanstack-table-components.template'
+
+export {
+  tablePresets,
+  type TablePresetName,
+} from './tanstack-table-presets'
 
 export {
   generateRailsRoutes,
