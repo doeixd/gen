@@ -119,7 +119,7 @@ function generateZodSchemaCode(field: ParsedField, config: GeneratorConfig): Res
 /**
  * Generate CRUD routes for all entities
  */
-async function generateCrud(args: GeneratorArgs): Promise<Result<void, GeneratorError>> {
+export async function generateCrud(args: GeneratorArgs): Promise<Result<void, GeneratorError>> {
   try {
     const { config, entities } = args
     logger.section('🛣️  Generating CRUD Routes')
@@ -165,7 +165,7 @@ async function generateCrud(args: GeneratorArgs): Promise<Result<void, Generator
 /**
  * Generate Convex functions for all entities
  */
-async function generateConvex(args: GeneratorArgs): Promise<Result<void, GeneratorError>> {
+export async function generateConvex(args: GeneratorArgs): Promise<Result<void, GeneratorError>> {
   try {
     const { config, entities } = args
     logger.section('⚡ Generating Convex Functions')
@@ -208,7 +208,7 @@ async function generateConvex(args: GeneratorArgs): Promise<Result<void, Generat
 /**
  * Generate forms for all entities
  */
-async function generateForms(args: GeneratorArgs): Promise<Result<void, GeneratorError>> {
+export async function generateForms(args: GeneratorArgs): Promise<Result<void, GeneratorError>> {
   try {
     const { config, entities } = args
     logger.section('📝 Generating Forms')
@@ -577,7 +577,7 @@ async function generateDeployment(args: GeneratorArgs): Promise<Result<void, Gen
 /**
  * Generate database schemas for all entities
  */
-async function generateDatabase(args: GeneratorArgs): Promise<Result<void, GeneratorError>> {
+export async function generateDatabase(args: GeneratorArgs): Promise<Result<void, GeneratorError>> {
   try {
     const { config, entities, customGenerators } = args
     logger.section('🗄️  Generating Database Schemas')
@@ -677,7 +677,7 @@ async function generateDatabase(args: GeneratorArgs): Promise<Result<void, Gener
 /**
  * Generate API code for all entities
  */
-async function generateAPI(args: GeneratorArgs): Promise<Result<void, GeneratorError>> {
+export async function generateAPI(args: GeneratorArgs): Promise<Result<void, GeneratorError>> {
   try {
     const { config, entities, customGenerators } = args
     logger.section('🚀 Generating API Code')
@@ -786,7 +786,7 @@ async function generateAPI(args: GeneratorArgs): Promise<Result<void, GeneratorE
 /**
  * Generate frontend code for all entities
  */
-async function generateFrontend(args: GeneratorArgs): Promise<Result<void, GeneratorError>> {
+export async function generateFrontend(args: GeneratorArgs): Promise<Result<void, GeneratorError>> {
   try {
     const { config, entities, customGenerators } = args
     logger.section('🎨 Generating Frontend Code')
@@ -850,7 +850,7 @@ async function generateFrontend(args: GeneratorArgs): Promise<Result<void, Gener
 /**
  * Generate tests for all entities
  */
-async function generateTests(args: GeneratorArgs): Promise<Result<void, GeneratorError>> {
+export async function generateTests(args: GeneratorArgs): Promise<Result<void, GeneratorError>> {
   try {
     const { config, entities, customGenerators } = args
     logger.section('🧪 Generating Tests')
@@ -946,7 +946,7 @@ async function generateTests(args: GeneratorArgs): Promise<Result<void, Generato
 /**
  * Generate documentation for all entities
  */
-async function generateDocumentation(args: GeneratorArgs): Promise<Result<void, GeneratorError>> {
+export async function generateDocumentation(args: GeneratorArgs): Promise<Result<void, GeneratorError>> {
   try {
     const { config, entities, customGenerators } = args
     logger.section('📚 Generating Documentation')
