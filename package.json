@@ -46,7 +46,11 @@
     "test:generators": "vitest --run test/templates test/cli test/golden test/contracts",
     "test:golden": "vitest --run test/golden",
     "test:integration": "vitest --run test/integration",
-    "verify:generators": "npm run type-check && npm run test:generators"
+    "verify:generators": "npm run type-check && npm run test:generators",
+    "release:check": "npm run type-check && npm test && npm run build",
+    "release:tag": "node -e \"const {execSync}=require('child_process');const v=require('./package.json').version;execSync('git tag -a v'+v+' -m \\\"release: v'+v+'\\\"',{stdio:'inherit'});console.log('Created tag v'+v);\"",
+    "release:push": "git push origin main && git push origin --tags",
+    "release": "npm run release:check && npm run release:tag && npm run release:push"
   },
   "private": false,
   "description": "A powerful CLI tool and library for code generation with configurable templates, TypeScript support, and flexible data transformation utilities",
