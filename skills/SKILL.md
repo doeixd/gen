@@ -53,6 +53,11 @@ Use these newer capabilities when helping end users:
   - CLI controls: `--no-project-generators`, `--project-generator-include`, `--project-generator-exclude`
   - conventions doc: `docs/entity-and-generator-file-conventions.md`
   - recipes doc: `docs/vite-plugin-recipes.md`
+- **New showcase examples**
+  - full object-style (no DSL) typed entity example: `examples/showcase/todo-full-object-showcase.entity.tsx`
+  - corresponding project generators: `examples/showcase/todo.generator.ts`, `examples/showcase/todo-list.generator.ts`
+  - Vite distributed `.entity.ts` + `.generator.ts` demo: `examples/vite-discovery-demo`
+  - UnJS generator demo (Magicast + Knitwork): `examples/unjs-generator-demo`
 
 When users ask how to avoid a single giant entity file, recommend the Vite plugin with `*.entity.ts` files.
 
@@ -287,11 +292,26 @@ Each entity should define:
 - Permissions using the permission configuration
 - Optional: relationships, mutations, hooks, routes
 
+For a fully explicit object-style example with inline React components and generic parameters, reference:
+
+- `examples/showcase/todo-full-object-showcase.entity.tsx`
+
+For paired `*.generator.ts` files that target those entities, reference:
+
+- `examples/showcase/todo.generator.ts`
+- `examples/showcase/todo-list.generator.ts`
+
 ### 4. Generate Code
 
 Run the Gen CLI to generate code for your targets: gen:105-114 
 
 Generated code will be placed in the configured output directories with proper TypeScript types throughout.
+
+To run project-local generators from a specific folder:
+
+```bash
+gen generate --targets=frontend,docs --project-generator-include=examples/showcase
+```
 
 ## Key Helper Functions
 
