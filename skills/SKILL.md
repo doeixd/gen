@@ -51,13 +51,7 @@ Use these newer capabilities when helping end users:
   - `*.generator.ts` modules can be auto-discovered and executed after built-in generation
   - selector support for `targets` and `entities`
   - CLI controls: `--no-project-generators`, `--project-generator-include`, `--project-generator-exclude`
-  - conventions doc: `docs/entity-and-generator-file-conventions.md`
-  - recipes doc: `docs/vite-plugin-recipes.md`
-- **New showcase examples**
-  - full object-style (no DSL) typed entity example: `examples/showcase/todo-full-object-showcase.entity.tsx`
-  - corresponding project generators: `examples/showcase/todo.generator.ts`, `examples/showcase/todo-list.generator.ts`
-  - Vite distributed `.entity.ts` + `.generator.ts` demo: `examples/vite-discovery-demo`
-  - UnJS generator demo (Magicast + Knitwork): `examples/unjs-generator-demo`
+  - conventions and recipes are available in the official documentation
 
 When users ask how to avoid a single giant entity file, recommend the Vite plugin with `*.entity.ts` files.
 
@@ -292,14 +286,7 @@ Each entity should define:
 - Permissions using the permission configuration
 - Optional: relationships, mutations, hooks, routes
 
-For a fully explicit object-style example with inline React components and generic parameters, reference:
-
-- `examples/showcase/todo-full-object-showcase.entity.tsx`
-
-For paired `*.generator.ts` files that target those entities, reference:
-
-- `examples/showcase/todo.generator.ts`
-- `examples/showcase/todo-list.generator.ts`
+For an explicit object-style approach, define one `*.entity.ts` file per domain object and include full db/field/permission/route configuration directly in each entity object.
 
 ### 4. Generate Code
 
@@ -310,7 +297,7 @@ Generated code will be placed in the configured output directories with proper T
 To run project-local generators from a specific folder:
 
 ```bash
-gen generate --targets=frontend,docs --project-generator-include=examples/showcase
+gen generate --targets=frontend,docs --project-generator-include=src/custom
 ```
 
 ## Key Helper Functions
@@ -2346,7 +2333,7 @@ npm install -D gen-plugin-foo
 @doeixd/gen plugin list
 ```
 
-Starter template for publishing your own plugin: `examples/plugin-starter`.
+Use your preferred starter template for publishing plugins.
 
 Expected custom generator exports:
 
@@ -2377,6 +2364,5 @@ npm run verify:generators
 
 ## References
 
-- External plugin authoring: `docs/plugin-authoring.md`
-- Starter plugin package: `examples/plugin-starter`
-- Main usage guide: `README.md`
+- External plugin authoring: official Gen plugin authoring docs
+- Main usage guide: official Gen getting-started and CLI docs
