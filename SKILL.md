@@ -51,6 +51,8 @@ Use these newer capabilities when helping end users:
   - `*.generator.ts` modules can be auto-discovered and executed after built-in generation
   - selector support for `targets` and `entities`
   - CLI controls: `--no-project-generators`, `--project-generator-include`, `--project-generator-exclude`
+  - conventions doc: `docs/entity-and-generator-file-conventions.md`
+  - recipes doc: `docs/vite-plugin-recipes.md`
 
 When users ask how to avoid a single giant entity file, recommend the Vite plugin with `*.entity.ts` files.
 

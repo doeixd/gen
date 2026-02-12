@@ -26,6 +26,12 @@ This demo shows:
 - `knitwork` for typed code generation
 - `magicast` for safe source patching
 
+## Vite Discovery Demo
+
+For a full `.entity.ts` + `.generator.ts` + Vite discovery workflow, see:
+
+- `examples/vite-discovery-demo`
+
 ## Quick Start
 
 ### Using Custom Generators

@@ -696,6 +696,8 @@ npm run verify:generators
 For a publishable external plugin structure, see `docs/plugin-authoring.md`.
 You can also copy the starter package at `examples/plugin-starter`.
 For Vite auto-discovery of distributed `*.entity.ts` files, see `docs/vite-entity-discovery-plugin.md`.
+For naming and contract conventions of `.entity.ts` and `.generator.ts`, see `docs/entity-and-generator-file-conventions.md`.
+For practical Vite recipes combining discovery and project generators, see `docs/vite-plugin-recipes.md`.
 For using UnJS tools (Magicast, Knitwork, Untyped, Unimport, Giget, Unbuild) in generators, see `docs/unjs-tools-in-generators.md`.
 
 ## 🖥️ CLI Usage
