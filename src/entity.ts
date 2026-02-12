@@ -1,36 +1,37 @@
 /**
  * Entity Configuration
- * Complete entity definition with all features - Single source of truth
+ * Complete entity definition with compatibility for legacy and modern shapes
  */
 
 import type { StandardSchema, Validator, AsyncValidator } from './validators'
-import type { ComponentRef, ComponentWithProps, DisplayComponentConfig, InputComponentConfig } from './components'
+import type {
+  ComponentRef,
+  ComponentReference,
+  ComponentWithProps,
+  DisplayComponentConfig,
+  InputComponentConfig,
+  ResolvableComponent,
+} from './components'
 import type { DbTable, DbColumn, DbIndex, DbConstraint } from './database'
 import type { PermissionConfig, EntityPermissions, RoutePermissionConfig } from './permissions'
 import type { EntityMutator, MutationContext, MutationHistory } from './mutations'
 import type { EntityErrorConfig } from './errors'
 
 declare global {
-  type RoleType = 'user' | 'admin' | 'superadmin'
+  type RoleType = 'user' | 'admin' | 'superadmin' | (string & {})
 }
 
-/**
- * CRUD operation return types
- */
 export interface CRUDResult {
-  createOne<T>(data: T): Promise<{success: boolean, data?: T, error?: string}>
-  createMany<T>(data: T[]): Promise<{success: boolean, data?: T[], errors?: string[]}>
-  readOne<T>(id: string): Promise<{success: boolean, data?: T, error?: string}>
-  readMany<T>(filter?: Partial<T>): Promise<{success: boolean, data?: T[], error?: string}>
-  updateOne<T>(id: string, data: Partial<T>): Promise<{success: boolean, data?: T, error?: string}>
-  updateMany<T>(filter: Partial<T>, data: Partial<T>): Promise<{success: boolean, data?: T[], errors?: string[]}>
-  deleteOne<_T>(id: string): Promise<{success: boolean, error?: string}>
-  deleteMany<T>(filter: Partial<T>): Promise<{success: boolean, count?: number, errors?: string[]}>
+  createOne<T>(data: T): Promise<{ success: boolean; data?: T; error?: string }>
+  createMany<T>(data: T[]): Promise<{ success: boolean; data?: T[]; errors?: string[] }>
+  readOne<T>(id: string): Promise<{ success: boolean; data?: T; error?: string }>
+  readMany<T>(filter?: Partial<T>): Promise<{ success: boolean; data?: T[]; error?: string }>
+  updateOne<T>(id: string, data: Partial<T>): Promise<{ success: boolean; data?: T; error?: string }>
+  updateMany<T>(filter: Partial<T>, data: Partial<T>): Promise<{ success: boolean; data?: T[]; errors?: string[] }>
+  deleteOne<_T>(id: string): Promise<{ success: boolean; error?: string }>
+  deleteMany<T>(filter: Partial<T>): Promise<{ success: boolean; count?: number; errors?: string[] }>
 }
 
-/**
- * Sync configuration for entity data
- */
 export interface SyncConfig<T> {
   enabled?: boolean
   interval?: number
@@ -38,9 +39,35 @@ export interface SyncConfig<T> {
   onError?: (error: Error) => void
 }
 
-/**
- * Routes configuration for entity
- */
+export interface NameConfig {
+  singular: string
+  plural: string
+  display?: string
+  internal?: string
+  db?: string
+}
+
+export interface ValidationConfig<T> {
+  touched?: Validator<T>
+  submitted?: Validator<T> | AsyncValidator<T>
+  onBlur?: Validator<T>
+  onChange?: Validator<T>
+  custom?: Record<string, Validator<any> | AsyncValidator<any>>
+  debounce?: number
+  validateOnMount?: boolean
+  validateOnChange?: boolean
+  validateOnBlur?: boolean
+}
+
+export interface LegacyApiRouteConfig {
+  basePath?: string
+  endpoints?: Record<string, {
+    method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
+    path: string
+    permissions?: EntityPermissions | PermissionConfig
+  }>
+}
+
 export interface RoutesConfig<_T = any, _C extends ComponentType = ComponentType, R extends ComponentType = ComponentType> {
   basePath?: string
   listRoute?: {
@@ -73,101 +100,68 @@ export interface RoutesConfig<_T = any, _C extends ComponentType = ComponentType
   generateDetail?: boolean
   generateCreate?: boolean
   generateEdit?: boolean
+
+  // Legacy route config used throughout tests/templates
+  api?: LegacyApiRouteConfig
 }
 
-/**
- * Name configuration
- */
-export interface NameConfig {
-  singular: string;
-  plural: string;
-  display?: string;
-  internal?: string;
-  db?: string;
-}
-
-/**
- * Validation configuration for fields
- */
-export interface ValidationConfig<T, _C extends ComponentType = ComponentType> {
-  touched?: Validator<T>
-  submitted?: Validator<T> | AsyncValidator<T>
-  onBlur?: Validator<T>
-  onChange?: Validator<T>
-  custom?: Record<string, Validator<any> | AsyncValidator<any>>
-  debounce?: number
-  validateOnMount?: boolean
-  validateOnChange?: boolean
-  validateOnBlur?: boolean
-}
-
-/**
-* Field mapping configuration
-*/
 export interface FieldMapping<T, C extends ComponentType = ComponentType> {
-displayComponent?: C | DisplayComponentConfig<C>
-inputComponent?: C | ComponentWithProps<C>;
-// Alias for inputComponent for backwards compatibility
-component?: C | ComponentWithProps<C>;
-loadingComponent?: C | ComponentWithProps<C>;
-emptyComponent?: C | ComponentWithProps<C>;
-defaultValue?: T | (() => T);
-version?: number;
-validation?: (value: any) => import('./validators').ValidationResult | Promise<import('./validators').ValidationResult> | ValidationConfig<T,C>
-typescriptType?: T // Phantom type for type inference
-sortable?: boolean | ((a: T, b: T) => number)
-filterable?: boolean | ((item: T, filterValue: any) => boolean)
-routes?: RoutesConfig<C, C>
-name?: string | NameConfig
-optional?: boolean
-editable?: boolean
-standardSchema?: StandardSchema<T>
-permissions?: PermissionConfig
-jsType?: 'string' | 'number' | 'boolean' | 'object' | 'array' | 'date'
-excludeFromForms?: boolean
-excludeFromList?: boolean
+  displayComponent?: C | ResolvableComponent | ComponentReference | DisplayComponentConfig<C>
+  inputComponent?: C | ResolvableComponent | ComponentReference | ComponentWithProps<C>
+  component?: C | ResolvableComponent | ComponentReference | ComponentWithProps<C>
+  loadingComponent?: C | ResolvableComponent | ComponentReference | ComponentWithProps<C>
+  emptyComponent?: C | ResolvableComponent | ComponentReference | ComponentWithProps<C>
+  defaultValue?: T | (() => T)
+  version?: number
+  validation?: ((value: any) => import('./validators').ValidationResult | Promise<import('./validators').ValidationResult>) | ValidationConfig<T>
+  typescriptType?: T
+  sortable?: boolean | ((a: T, b: T) => number)
+  filterable?: boolean | ((item: T, filterValue: any) => boolean)
+  routes?: RoutesConfig<any, any>
+  name?: string | NameConfig
+  optional?: boolean
+  editable?: boolean
+  standardSchema?: StandardSchema<T>
+  permissions?: PermissionConfig
+  jsType?: 'string' | 'number' | 'boolean' | 'object' | 'array' | 'date'
+  excludeFromForms?: boolean
+  excludeFromList?: boolean
+  label?: string
+  description?: string
 
-// API documentation
-openapi?: {
-description?: string
-example?: any
-deprecated?: boolean
-}
+  openapi?: {
+    description?: string
+    example?: any
+    deprecated?: boolean
+  }
 
-// GraphQL
   graphql?: {
-type?: string
-directives?: string[]
-}
+    type?: string
+    directives?: string[]
+  }
 
-// Serialization
   serialize?: boolean
-deserialize?: boolean
-transform?: (value: any) => any
+  deserialize?: boolean
+  transform?: (value: any) => any
 
-// Search/Indexing
   searchable?: boolean
-indexed?: boolean
-weight?: number // For search ranking
+  indexed?: boolean
+  weight?: number
 
-// Form generation
   formGroup?: string
-formOrder?: number
-placeholder?: string
-helpText?: string
+  formOrder?: number
+  placeholder?: string
+  helpText?: string
 }
 
-/**
- * Table display configuration with advanced features
- */
 export interface TableConfig<T = any, C extends ComponentType = ComponentType> extends TableFieldConfig<T, C> {
   tableName: string
 }
 
 interface TableFieldConfig<T, C extends ComponentType = ComponentType> {
-  tableComponent: C | ComponentWithProps<C>;
-  layout: 'list' | 'card' | 'custom' ;
-  columns?: (keyof T)[]
+  tableComponent: C | ResolvableComponent | ComponentReference | ComponentWithProps<C>
+  layout: 'list' | 'card' | 'custom'
+  columns?: Array<Extract<keyof T, string>>
   sortable?: string[]
   searchable?: string[]
   pageSize?: number
@@ -177,51 +171,41 @@ interface TableFieldConfig<T, C extends ComponentType = ComponentType> {
   enableColumnFilters?: boolean
   enableRowSelection?: boolean
   enableSorting?: boolean
-  defaultSortColumn?: keyof T
+  defaultSortColumn?: Extract<keyof T, string>
   defaultSortDirection?: 'asc' | 'desc'
-  customColumnRenderers?: Record<string, string> // Function names for custom renderers
-  permissions?: RoutePermissionConfig,
+  customColumnRenderers?: Record<string, string>
+  permissions?: RoutePermissionConfig
   version?: number
   onError?: (error: Error) => void
 }
 
-/**
- * Enhanced relationship mapping with full database details
- */
-export interface RelationshipMapping<TLocal, TForeign = any, C extends ComponentType = ComponentType> {
-  // Naming and identity
+export interface RelationshipMapping<TLocal extends Record<string, any>, TForeign extends Record<string, any> = Record<string, any>, C extends ComponentType = ComponentType> {
   name: string
   version?: number
   description?: string
 
-  // Entities involved
-  localEntity: string | Entity<TLocal, C> // Table name or full entity
+  localEntity: string | Entity<TLocal, C>
   foreignEntity: string | Entity<TForeign, C>
 
-  // Relationship type
   relationType: 'one-to-one' | 'one-to-many' | 'many-to-one' | 'many-to-many'
+  type?: 'one-to-one' | 'one-to-many' | 'many-to-one' | 'many-to-many'
 
-  // Database-level configuration
-  db: {
-    foreignKey: {
-      localColumn: keyof TLocal | string
-      foreignColumn: keyof TForeign | string
-      onDelete: 'cascade' | 'set-null' | 'restrict' | 'no-action'
-      onUpdate: 'cascade' | 'set-null' | 'restrict' | 'no-action'
-      indexed: boolean
+  db?: {
+    foreignKey?: {
+      localColumn: Extract<keyof TLocal, string> | string
+      foreignColumn: Extract<keyof TForeign, string> | string
+      onDelete?: 'cascade' | 'set-null' | 'restrict' | 'no-action'
+      onUpdate?: 'cascade' | 'set-null' | 'restrict' | 'no-action'
+      indexed?: boolean
       deferrable?: boolean
       constraintName?: string
     }
-
-    // For many-to-many relationships
     junctionTable?: {
       name: string
       localColumn: string
       foreignColumn: string
       additionalColumns?: Record<string, DbColumn>
     }
-
-    // Indexes for performance
     indexes?: Array<{
       name: string
       columns: string[]
@@ -230,43 +214,49 @@ export interface RelationshipMapping<TLocal, TForeign = any, C extends Component
     }>
   }
 
-  // Display configuration
-  display: {
-    displayField: keyof TForeign | string // Which field to display from foreign entity
-    displayComponent?: ComponentRef
-    listComponent?: ComponentRef
-    eager?: boolean // Load eagerly or lazy
-    limit?: number // For one-to-many, limit results
+  // Legacy fields (still used by tests/templates/builders)
+  foreignKey?: string
+  localKey?: string
+  onDelete?: string
+  onUpdate?: string
+  junctionTable?: string
+  junctionColumns?: {
+    localKey: string
+    foreignKey: string
   }
 
-  // Query configuration
-  query: {
+  display?: {
+    displayField: Extract<keyof TForeign, string> | string
+    displayComponent?: ComponentRef
+    listComponent?: ComponentRef
+    eager?: boolean
+    limit?: number
+  }
+
+  query?: {
     fetchRelated?: (id: string | number) => Promise<TForeign | TForeign[] | null>
     queryRelated?: (filter: Partial<TForeign>) => Promise<TForeign[]>
     caching?: {
       enabled: boolean
-      ttl?: number // Time to live in seconds
+      ttl?: number
       strategy?: 'lru' | 'fifo' | 'lfu'
     }
   }
 
-  // Permissions
   permissions?: PermissionConfig
-
-  // Validation
   standardSchema?: StandardSchema<TForeign | TForeign[]>
 }
 
-/**
- * Complete Entity definition - Single source of truth for your application
- */
+export type RelationshipCollection<T extends Record<string, any>, C extends ComponentType = ComponentType> =
+  | Record<string, RelationshipMapping<T, any, C>>
+  | Array<RelationshipMapping<T, any, C>>
+
 export type Entity<
-  T,
+  T extends Record<string, any>,
   C extends ComponentType = ComponentType,
   R extends ComponentType = ComponentType,
   E extends Record<string, any> = Record<string, any>
 > = {
-  // ===== Identity & Metadata =====
   id: string
   name: NameConfig
   version: number
@@ -278,7 +268,6 @@ export type Entity<
   icon?: string
   color?: string
 
-  // ===== UI Components (actual functions, not strings!) =====
   components?: {
     display?: ComponentRef | DisplayComponentConfig
     input?: ComponentRef | InputComponentConfig
@@ -287,65 +276,37 @@ export type Entity<
     error?: ComponentRef | ComponentWithProps
   }
 
-  // ===== Database Schema =====
   db: {
     table: DbTable
-    columns: {
+    columns: Record<string, DbColumn> & {
       [K in keyof T]: DbColumn<T[K]>
     }
     indexes?: DbIndex[]
     constraints?: DbConstraint[]
   }
 
-  // ===== Fields Configuration =====
-  fields: {
+  fields: Record<string, FieldMapping<any, C>> & {
     [K in keyof T]: FieldMapping<T[K], C>
   }
 
-  // ===== Relationships =====
-  relationships?: Record<string, RelationshipMapping<T, any, C>>
-
-  // ===== Routes =====
+  relationships?: RelationshipCollection<T, C>
   routes?: RoutesConfig<T, C, R>
-
-  // ===== Tables/Lists =====
   tables?: TableFieldConfig<T, C>[]
 
-  // ===== Mutations (with audit trail & versioning) =====
   mutators?: Record<string, EntityMutator<T, any>>
   mutationHistory?: MutationHistory<T>[]
 
-   // ===== Standard CRUD operations (auto-generated) =====
-   crud?: {
-     createOne: EntityMutator<T, Partial<T>>
-     createMany: EntityMutator<T[], Partial<T>[]>
-     readOne: EntityMutator<T | null, string>
-     readMany: EntityMutator<T[], Partial<T> | undefined>
-     updateOne: EntityMutator<T, {id: string, data: Partial<T>}>
-     updateMany: EntityMutator<T[], {filter: Partial<T>, data: Partial<T>}>
-     deleteOne: EntityMutator<void, string>
-     deleteMany: EntityMutator<{count: number}, Partial<T>>
-     softDelete?: EntityMutator<T, string>
-     restore?: EntityMutator<T, string>
-   }
+  crud?: Record<string, EntityMutator<any, any>>
+  relations?: Record<string, {
+    create?: EntityMutator<any, any>
+    read?: EntityMutator<any, any>
+    update?: EntityMutator<any, any>
+    delete?: EntityMutator<any, any>
+  }>
 
-   // ===== Relationship CRUD operations =====
-   relations?: {
-     [relationName: string]: {
-       create?: EntityMutator<any, any>
-       read?: EntityMutator<any, any>
-       update?: EntityMutator<any, any>
-       delete?: EntityMutator<any, any>
-     }
-   }
-
-  // ===== Comprehensive Permissions =====
   permissions?: EntityPermissions
-
-  // ===== Validation =====
   schema?: StandardSchema<T>
 
-  // ===== Lifecycle Hooks =====
   hooks?: {
     beforeCreate?: (data: Partial<T>, ctx: MutationContext) => Promise<void>
     afterCreate?: (data: T, ctx: MutationContext) => Promise<void>
@@ -355,7 +316,6 @@ export type Entity<
     afterDelete?: (id: string, ctx: MutationContext) => Promise<void>
   }
 
-  // Alias for hooks for backwards compatibility
   lifecycle?: {
     beforeCreate?: (data: Partial<T>, ctx: MutationContext) => Promise<void>
     afterCreate?: (data: T, ctx: MutationContext) => Promise<void>
@@ -365,26 +325,18 @@ export type Entity<
     afterDelete?: (id: string, ctx: MutationContext) => Promise<void>
   }
 
-  // ===== Computed Fields =====
-  computed?: {
-  [key: string]: {
-  compute: (entity: T) => any
-  dependencies: Array<keyof T>
-  cached?: boolean
-  ttl?: number
-  }
-  }
+  computed?: Record<string, {
+    compute: (entity: T) => any
+    dependencies: Array<Extract<keyof T, string>>
+    cached?: boolean
+    ttl?: number
+  }>
 
-  // ===== Sync Configuration =====
   sync?: SyncConfig<T>
   getKey?: (item: T) => string | number
   rowUpdateMode?: 'partial' | 'full'
-
-  // ===== Error Configuration =====
   errors?: EntityErrorConfig
 
-  // ===== Code Generation Configuration =====
-  // API generation
   generateAPI?: boolean
   apiBasePath?: string
   openapi?: {
@@ -393,7 +345,6 @@ export type Entity<
     description?: string
   }
 
-  // GraphQL generation
   generateGraphQL?: boolean
   graphql?: {
     type?: 'type' | 'input' | 'interface'
@@ -401,41 +352,45 @@ export type Entity<
     directives?: string[]
   }
 
-  // Frontend generation
   generateComponents?: boolean
   componentPath?: string
   formLayout?: 'vertical' | 'horizontal' | 'inline'
 
-  // Database generation
   generateMigrations?: boolean
   migrationStrategy?: 'incremental' | 'snapshot'
 
-  // Serialization
   serializeAs?: 'json' | 'xml' | 'csv'
   excludeFields?: string[]
   includeFields?: string[]
 
-  // Search/Indexing
   searchableFields?: string[]
   indexedFields?: string[]
-
-  // Audit/Logging
   auditChanges?: boolean
   logLevel?: 'debug' | 'info' | 'warn' | 'error'
-
-  // Caching
   cacheStrategy?: 'none' | 'memory' | 'redis' | 'filesystem'
   cacheTTL?: number
 
-  // ===== Deprecated/Migration =====
+  ui?: {
+    list?: string[]
+    form?: string[]
+    detail?: string[]
+  }
+
+  // Legacy code generation block used by template helpers
+  codegen?: {
+    generateAPI?: boolean
+    generateComponents?: boolean
+    generateGraphQL?: boolean
+    searchableFields?: string[]
+    indexedFields?: string[]
+    auditChanges?: boolean
+  }
+
   deprecated?: boolean
   replacedBy?: string
   migrationPath?: string
 } & E
 
-/**
- * Route generation configuration
- */
 export interface RouteConfig {
   generateIndex: boolean
   generateDetail: boolean
@@ -452,4 +407,11 @@ export const routeConfig: RouteConfig = {
   generateCreate: true,
   defaultPageSize: 20,
   enableVirtualScrolling: true,
+}
+
+export function getRelationships<T extends Record<string, any>, C extends ComponentType = ComponentType>(
+  entity: Pick<Entity<T, C>, 'relationships'>
+): Array<RelationshipMapping<T, any, C>> {
+  if (!entity.relationships) return []
+  return Array.isArray(entity.relationships) ? entity.relationships : Object.values(entity.relationships)
 }

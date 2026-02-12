@@ -4,6 +4,7 @@
  */
 
 import type { Entity } from '../entity'
+import { getRelationships } from '../entity'
 
 /**
  * Generated frontend code
@@ -22,7 +23,7 @@ export class FrontendGenerator {
   /**
    * Generate all frontend code for an entity
    */
-  static generate<T>(entity: Entity<T>): GeneratedFrontendCode {
+  static generate<T extends Record<string, any>>(entity: Entity<T>): GeneratedFrontendCode {
     const entityName = entity.name.singular
     const pluralName = entity.name.plural
 
@@ -82,7 +83,7 @@ export class TestGenerator {
   /**
    * Generate tests for an entity
    */
-  static generate<T>(entity: Entity<T>): GeneratedTestCode {
+  static generate<T extends Record<string, any>>(entity: Entity<T>): GeneratedTestCode {
     return {
       unit: ['// TODO: Generate unit tests'],
       integration: ['// TODO: Generate integration tests'],
@@ -108,7 +109,7 @@ export class DocumentationGenerator {
   /**
    * Generate documentation for an entity
    */
-  static generate<T>(entity: Entity<T>): GeneratedDocumentation {
+  static generate<T extends Record<string, any>>(entity: Entity<T>): GeneratedDocumentation {
     const entityName = entity.name.singular
     const pluralName = entity.name.plural
 
@@ -132,7 +133,7 @@ export class DocumentationGenerator {
   /**
    * Generate comprehensive markdown documentation
    */
-  private static generateMarkdown<T>(entity: Entity<T>): string {
+  private static generateMarkdown<T extends Record<string, any>>(entity: Entity<T>): string {
     const entityName = entity.name.singular
     const pluralName = entity.name.plural
 
@@ -141,17 +142,18 @@ export class DocumentationGenerator {
       return `| ${name} | ${fieldConfig.jsType || 'unknown'} | ${field.optional ? 'No' : 'Yes'} | ${fieldConfig.standardSchema ? 'Yes' : 'No'} | ${field.permissions ? 'Yes' : 'No'} |`
     }).join('\n')
 
-    const relationshipsSection = entity.relationships ? `
+    const relationships = getRelationships(entity)
+    const relationshipsSection = relationships.length > 0 ? `
 ## Relationships
 
-${entity.relationships.map(rel => {
+${relationships.map(rel => {
       const localTable = typeof rel.localEntity === 'string' ? rel.localEntity : rel.localEntity.db.table.name
       const foreignTable = typeof rel.foreignEntity === 'string' ? rel.foreignEntity : rel.foreignEntity.db.table.name
 
       return `### ${rel.name}
 - **Type**: ${rel.relationType}
-- **Local**: ${localTable} (${rel.db.foreignKey.localColumn})
-- **Foreign**: ${foreignTable} (${rel.db.foreignKey.foreignColumn})
+- **Local**: ${localTable} (${rel.db?.foreignKey?.localColumn ?? 'id'})
+- **Foreign**: ${foreignTable} (${rel.db?.foreignKey?.foreignColumn ?? 'id'})
 - **Description**: ${rel.description || 'No description'}
 `
     }).join('\n')}` : ''
@@ -248,7 +250,7 @@ const updated${entityName} = await api.${pluralName}.update(id, {
   /**
    * Generate OpenAPI specification
    */
-  private static generateOpenAPI<T>(entity: Entity<T>): string {
+  private static generateOpenAPI<T extends Record<string, any>>(entity: Entity<T>): string {
     const entityName = entity.name.singular
     const pluralName = entity.name.plural
     const basePath = `/api/${pluralName}`
@@ -416,7 +418,7 @@ const updated${entityName} = await api.${pluralName}.update(id, {
   /**
    * Generate permission matrix
    */
-  private static generatePermissionMatrix<T>(entity: Entity<T>): string {
+  private static generatePermissionMatrix<T extends Record<string, any>>(entity: Entity<T>): string {
     const roles = ['admin', 'user', 'guest']
     const actions = ['create', 'read', 'update', 'delete']
 
@@ -466,20 +468,20 @@ ${entity.permissions?.organization ? `
   /**
    * Generate ERD diagram
    */
-  private static generateERD<T>(entity: Entity<T>): string {
+  private static generateERD<T extends Record<string, any>>(entity: Entity<T>): string {
     const entityName = entity.name.singular
 
     const fields = Object.entries(entity.fields).map(([name, field]) => {
       const fieldConfig = field as any
       const pk = entity.db.table.primaryKey.includes(name) ? 'PK' : ''
-      const fk = entity.relationships?.some(rel =>
-        rel.db.foreignKey.localColumn === name
+      const fk = getRelationships(entity).some(rel =>
+        rel.db?.foreignKey?.localColumn === name
       ) ? 'FK' : ''
       const required = field.optional ? '' : '*'
       return `  ${name} ${fieldConfig.jsType || 'string'} ${pk}${fk}${required}`
     }).join('\n')
 
-    const relationships = entity.relationships ? entity.relationships.map(rel => {
+    const relationships = getRelationships(entity).length > 0 ? getRelationships(entity).map(rel => {
       const localTable = typeof rel.localEntity === 'string' ? rel.localEntity : rel.localEntity.db.table.name
       const foreignTable = typeof rel.foreignEntity === 'string' ? rel.foreignEntity : rel.foreignEntity.db.table.name
 
@@ -487,7 +489,7 @@ ${entity.permissions?.organization ? `
         rel.relationType === 'one-to-many' ? '1-*' :
           rel.relationType === 'many-to-one' ? '*-1' : '*-*'
 
-      return `${localTable} ${cardinality} ${foreignTable} : ${rel.db.foreignKey.localColumn} -> ${rel.db.foreignKey.foreignColumn}`
+      return `${localTable} ${cardinality} ${foreignTable} : ${rel.db?.foreignKey?.localColumn ?? 'id'} -> ${rel.db?.foreignKey?.foreignColumn ?? 'id'}`
     }).join('\n') : ''
 
     return `erDiagram
@@ -502,7 +504,7 @@ ${relationships}
   /**
    * Generate API reference
    */
-  private static generateAPIReference<T>(entity: Entity<T>): string {
+  private static generateAPIReference<T extends Record<string, any>>(entity: Entity<T>): string {
     const entityName = entity.name.singular
     const pluralName = entity.name.plural
     const basePath = `/api/${pluralName}`
@@ -609,7 +611,7 @@ All endpoints may return the following error responses:
   /**
    * Generate field guide
    */
-  private static generateFieldGuide<T>(entity: Entity<T>): string {
+  private static generateFieldGuide<T extends Record<string, any>>(entity: Entity<T>): string {
     const entityName = entity.name.singular
 
     const fieldDetails = Object.entries(entity.fields).map(([name, field]) => {

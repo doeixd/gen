@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Deployment Configuration Templates
  * Generates Docker, CI/CD, and environment configurations

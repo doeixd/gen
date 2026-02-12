@@ -2,6 +2,19 @@
 
 This directory contains examples of how to extend the code generator with custom generators and configuration files.
 
+## Plugin Starter
+
+If you want a copy/paste external plugin package, use:
+
+- `examples/plugin-starter`
+
+It includes a minimal publishable package with:
+
+- `index.js` generator exports
+- default plugin export
+- `package.json` with peer dependency on `@doeixd/gen`
+- a small `vitest` test
+
 ## Quick Start
 
 ### Using Custom Generators

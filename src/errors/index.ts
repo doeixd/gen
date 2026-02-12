@@ -6,7 +6,7 @@
 // Core types
 export type {
   ErrorBase,
-  ErrorConstructor,
+  ErrorClass,
   ErrorTypes,
   AllErrorTypes,
   ErrorCategory,

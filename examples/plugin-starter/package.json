@@ -1,0 +1,26 @@
+{
+  "name": "gen-plugin-starter",
+  "version": "0.1.0",
+  "description": "Starter external generator/plugin for @doeixd/gen",
+  "type": "module",
+  "main": "./index.js",
+  "exports": {
+    ".": "./index.js"
+  },
+  "scripts": {
+    "build": "node -e \"console.log('No build step required')\"",
+    "test": "vitest --run"
+  },
+  "peerDependencies": {
+    "@doeixd/gen": "^0.1.0"
+  },
+  "devDependencies": {
+    "vitest": "^2.1.8"
+  },
+  "keywords": [
+    "gen",
+    "plugin",
+    "generator"
+  ],
+  "license": "MIT"
+}

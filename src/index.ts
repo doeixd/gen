@@ -44,6 +44,8 @@ export {
   ComponentRegistry,
   displayComponents,
   withProps,
+  component,
+  resolveComponent,
   isComponentWithProps,
   isDisplayComponentConfig,
   getComponentProps,
@@ -51,6 +53,8 @@ export {
 
 export type {
   ComponentRef,
+  ComponentReference,
+  ResolvableComponent,
   ComponentWithProps,
   DisplayComponentConfig,
   InputComponentConfig,
@@ -168,12 +172,18 @@ export {
   createFieldMapping,
   createEntity,
   createRelationship,
+  createEntityObject,
+  createCrudApiRoutes,
+  permissionPresets,
   addTableOverride,
   addFieldPattern,
 } from './helpers'
 
 export type {
   TableFieldOverrides,
+  PrimitiveFieldType,
+  SimpleFieldDefinition,
+  CreateEntityObjectOptions,
 } from './helpers'
 
 // ===== Generator Interfaces =====
@@ -199,6 +209,33 @@ export {
   RelationshipBuilder,
   builders,
 } from './builders'
+
+// ===== Entity Kit DSL =====
+export {
+  createEntityKit,
+} from './entity-kit'
+
+export type {
+  FieldToken,
+  FieldTokenMap,
+  InferEntityData,
+} from './entity-kit'
+
+// ===== Vite Entity Discovery Plugin =====
+export {
+  createEntityDiscoveryPlugin,
+  VIRTUAL_ENTITIES_ID,
+  VIRTUAL_ENTITY_MAP_ID,
+  discoverEntityFiles,
+  isEntityFilePath,
+  normalizeEntityModule,
+  validateUniqueEntityIds,
+} from './vite/entity-discovery-plugin'
+
+export type {
+  ViteEntityDiscoveryPluginOptions,
+  NormalizedEntityModule,
+} from './vite/entity-discovery-plugin'
 
 // ===== Tags (Tagged Templates for Syntax Highlighting) =====
 export {

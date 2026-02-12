@@ -4,7 +4,7 @@
  */
 
 import type { Entity, FieldMapping, RoutesConfig, NameConfig, RelationshipMapping } from './entity'
-import type { DbColumn, DbColumnType, DbIndex, DbConstraint } from './database'
+import type { DbColumn, DbColumnType, DbConstraint } from './database'
 import type { PermissionConfig } from './permissions'
 import type { EntityMutator } from './mutations'
 import type { StandardSchema } from './validators'
@@ -228,7 +228,7 @@ export class DbColumnBuilder<T = any> {
   }
 
   // Alias for indexed()
-  addToIndex(indexName?: string) {
+  addToIndex(_indexName?: string) {
     this.config.indexed = true
     return this
   }
@@ -362,8 +362,8 @@ export class EntityBuilder<T extends Record<string, any>> {
     dbColumn: DbColumn<any>,
     fieldMapping: FieldMapping<any>
   ) {
-    this.config.db.columns[name] = dbColumn
-    this.config.fields[name] = fieldMapping
+    ;(this.config.db.columns as any)[name] = dbColumn
+    ;(this.config.fields as any)[name] = fieldMapping
     return this
   }
 
@@ -388,7 +388,7 @@ export class EntityBuilder<T extends Record<string, any>> {
         .inputComponent('TextField' as any)
         .displayComponent('Text' as any)
         .defaultValue(options?.defaultValue || '')
-        .schema(options?.schema || validators.string)
+        .schema(options?.schema || validators.string())
         .jsType('string')
         .build()
 
@@ -553,16 +553,16 @@ export class EntityBuilder<T extends Record<string, any>> {
     return this.constraint(constraint)
   }
 
-  relationship<TForeign = any>(relationship: RelationshipMapping<T, TForeign>) {
+  relationship<TForeign extends Record<string, any> = Record<string, any>>(relationship: RelationshipMapping<T, TForeign>) {
     if (!this.config.relationships) {
-      this.config.relationships = {}
+      this.config.relationships = {} as any
     }
-    this.config.relationships[relationship.name] = relationship
+    ;(this.config.relationships as any)[relationship.name] = relationship
     return this
   }
 
   // Add relationship by name and config (overloaded method)
-  addRelationship<TForeign = any>(nameOrRelationship: string | RelationshipMapping<T, TForeign>, config?: {
+  addRelationship<TForeign extends Record<string, any> = Record<string, any>>(nameOrRelationship: string | RelationshipMapping<T, TForeign>, config?: {
     type: 'one-to-one' | 'one-to-many' | 'many-to-one' | 'many-to-many'
     foreignEntity: string | Entity<TForeign>
     foreignKey?: string
@@ -582,7 +582,7 @@ export class EntityBuilder<T extends Record<string, any>> {
   }
 
   // Add relationship by name and config
-  addRelationshipByName<TForeign = any>(name: string, config: {
+  addRelationshipByName<TForeign extends Record<string, any> = Record<string, any>>(name: string, config: {
     type: 'one-to-one' | 'one-to-many' | 'many-to-one' | 'many-to-many'
     foreignEntity: string | Entity<TForeign>
     foreignKey?: string
@@ -616,9 +616,9 @@ export class EntityBuilder<T extends Record<string, any>> {
     }
 
     if (!this.config.relationships) {
-      this.config.relationships = {}
+      this.config.relationships = {} as any
     }
-    this.config.relationships[name] = relationship.build()
+    ;(this.config.relationships as any)[name] = relationship.build()
     return this
   }
 
@@ -646,7 +646,7 @@ export class EntityBuilder<T extends Record<string, any>> {
     }
     this.config.computed[name] = {
       compute,
-      dependencies,
+      dependencies: dependencies as Array<Extract<keyof T, string>>,
       ...options,
     }
     return this
@@ -690,12 +690,12 @@ export class EntityBuilder<T extends Record<string, any>> {
 /**
  * Relationship Builder
  */
-export class RelationshipBuilder<TLocal, TForeign = any> {
+export class RelationshipBuilder<TLocal extends Record<string, any>, TForeign extends Record<string, any> = Record<string, any>> {
   private config: Partial<RelationshipMapping<TLocal, TForeign>> = {
     version: 1,
   }
 
-  static create<TLocal, TForeign = any>(name?: string): RelationshipBuilder<TLocal, TForeign> {
+  static create<TLocal extends Record<string, any>, TForeign extends Record<string, any> = Record<string, any>>(name?: string): RelationshipBuilder<TLocal, TForeign> {
     const builder = new RelationshipBuilder<TLocal, TForeign>()
     if (name) {
       builder.config.name = name
@@ -816,7 +816,7 @@ export class RelationshipBuilder<TLocal, TForeign = any> {
   }
 
   // Set cascade options
-  setCascade(onDelete: 'cascade' | 'set-null' | 'restrict' | 'no-action', onUpdate?: 'cascade' | 'set-null' | 'restrict' | 'no-action') {
+  setCascade(onDeleteAction: 'cascade' | 'set-null' | 'restrict' | 'no-action', onUpdateAction?: 'cascade' | 'set-null' | 'restrict' | 'no-action') {
     if (!this.config.db) {
       this.config.db = {} as any
     }
@@ -824,13 +824,13 @@ export class RelationshipBuilder<TLocal, TForeign = any> {
       (this.config.db as any).foreignKey = {
         localColumn: '',
         foreignColumn: '',
-        onDelete,
-        onUpdate: onUpdate || onDelete,
+        onDelete: onDeleteAction,
+        onUpdate: onUpdateAction || onDeleteAction,
         indexed: true,
       }
     } else {
-      (this.config.db as any).foreignKey.onDelete = onDelete
-      (this.config.db as any).foreignKey.onUpdate = onUpdate || onDelete
+      ;(this.config.db as any).foreignKey.onDelete = onDeleteAction;
+      (this.config.db as any).foreignKey.onUpdate = onUpdateAction || onDeleteAction
     }
     return this
   }

@@ -9,9 +9,9 @@
 export interface DbColumnType<T = any> {
   typeName: string // e.g., 'varchar', 'integer', 'timestamp'
   typeParams?: any[] // e.g., [255] for varchar(255)
-  serialize: (value: T) => any
-  deserialize: (value: any) => T
-  validate?: (value: T) => boolean
+  serialize: (value: T | null | undefined) => any
+  deserialize: (value: any) => T | null | undefined
+  validate?: (value: any) => boolean
 
   // Schema generation for different ORMs/databases
   toDrizzle?: (columnName?: string) => string
@@ -41,7 +41,7 @@ export interface DbColumn<T = any> {
  */
 export interface DbTable {
   name: string
-  columns: Map<string, DbColumn>
+  columns?: Map<string, DbColumn>
   primaryKey: string[]
   uniqueConstraints?: string[][]
   checkConstraints?: Array<{name: string, expression: string}>
@@ -362,7 +362,7 @@ export const dbTypes = {
   array: <T>(elementType: DbColumnType<T>): DbColumnTypeWithModifiers<T[]> => withModifiers({
     typeName: 'array',
     typeParams: [elementType],
-    serialize: (v) => v.map(elementType.serialize), // Return array, not JSON string
+    serialize: (v) => (v ?? []).map(elementType.serialize), // Return array, not JSON string
     deserialize: (v) => {
       const arr = typeof v === 'string' ? JSON.parse(v) : v
       return arr.map(elementType.deserialize)
@@ -379,7 +379,7 @@ export const dbTypes = {
    */
   enum: <T extends readonly string[]>(values: T): DbColumnTypeWithModifiers<T[number]> => withModifiers({
     typeName: 'enum',
-    typeParams: values,
+    typeParams: [...values],
     serialize: (v) => String(v),
     deserialize: (v) => String(v) as T[number],
     validate: (v) => values.includes(v as any),

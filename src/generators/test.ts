@@ -36,7 +36,7 @@ export class TestGenerator {
   /**
    * Generate all test code for an entity
    */
-  static generate<T>(entity: Entity<T>, options: TestGeneratorOptions = {
+  static generate<T extends Record<string, any>>(entity: Entity<T>, options: TestGeneratorOptions = {
     framework: 'vitest',
     includeUnitTests: true,
     includeIntegrationTests: true,
@@ -59,7 +59,7 @@ export class TestGenerator {
   /**
    * Generate unit tests
    */
-  private static generateUnitTests<T>(entity: Entity<T>, options: TestGeneratorOptions): string {
+  private static generateUnitTests<T extends Record<string, any>>(entity: Entity<T>, options: TestGeneratorOptions): string {
     const entityName = entity.name.singular
     const pluralName = entity.name.plural
     const fields = Object.keys(entity.fields)
@@ -164,7 +164,7 @@ describe('${entityName} Unit Tests', () => {
   /**
    * Generate integration tests
    */
-  private static generateIntegrationTests<T>(entity: Entity<T>, options: TestGeneratorOptions): string {
+  private static generateIntegrationTests<T extends Record<string, any>>(entity: Entity<T>, options: TestGeneratorOptions): string {
     const entityName = entity.name.singular
     const pluralName = entity.name.plural
 
@@ -343,7 +343,7 @@ ${apiTests}
   /**
    * Generate E2E tests
    */
-  private static generateE2ETests<T>(entity: Entity<T>, options: TestGeneratorOptions): string {
+  private static generateE2ETests<T extends Record<string, any>>(entity: Entity<T>, options: TestGeneratorOptions): string {
     const entityName = entity.name.singular
     const pluralName = entity.name.plural
 
@@ -425,7 +425,7 @@ ${e2eTests}
   /**
    * Generate permission tests
    */
-  private static generatePermissionTests<T>(entity: Entity<T>, options: TestGeneratorOptions): string {
+  private static generatePermissionTests<T extends Record<string, any>>(entity: Entity<T>, options: TestGeneratorOptions): string {
     const entityName = entity.name.singular
     const pluralName = entity.name.plural
 

@@ -125,3 +125,21 @@ export {
   generateHonoRoutes,
   type APIRoutesTemplateOptions,
 } from './api-routes.template'
+
+export {
+  generateConvexBetterAuthTanstack,
+  type ConvexBetterAuthTanstackTemplateOptions,
+  type GeneratedConvexBetterAuthTanstackFiles,
+} from './convex-better-auth-tanstack.template'
+
+export {
+  generateSpacetimeBetterAuthTanstack,
+  type SpacetimeBetterAuthTanstackTemplateOptions,
+  type GeneratedSpacetimeBetterAuthTanstackFiles,
+} from './spacetime-better-auth-tanstack.template'
+
+export {
+  generateZeroBetterAuthTanstack,
+  type ZeroBetterAuthTanstackTemplateOptions,
+  type GeneratedZeroBetterAuthTanstackFiles,
+} from './zero-better-auth-tanstack.template'

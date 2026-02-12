@@ -1,0 +1,70 @@
+name: Integration Matrix
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+jobs:
+  fast-matrix:
+    name: Fast Matrix (${{ matrix.os }} / node${{ matrix.node }} / ${{ matrix.pm }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        node: [20, 22]
+        pm: [npm, pnpm]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Enable pnpm
+        if: matrix.pm == 'pnpm'
+        run: corepack enable
+
+      - name: Install dependencies (npm)
+        if: matrix.pm == 'npm'
+        run: npm install
+
+      - name: Install dependencies (pnpm)
+        if: matrix.pm == 'pnpm'
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Type check (npm)
+        if: matrix.pm == 'npm'
+        run: npm run type-check
+
+      - name: Type check (pnpm)
+        if: matrix.pm == 'pnpm'
+        run: pnpm run type-check
+
+      - name: Generator tests (npm)
+        if: matrix.pm == 'npm'
+        run: npm run test:generators
+
+      - name: Generator tests (pnpm)
+        if: matrix.pm == 'pnpm'
+        run: pnpm run test:generators
+
+  heavy-integration:
+    name: Heavy Integration (node22)
+    runs-on: ubuntu-latest
+    if: |
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-heavy-e2e'))
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install dependencies
+        run: npm install
+      - name: Run full integration tests
+        run: npm run test:integration

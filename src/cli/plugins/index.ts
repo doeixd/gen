@@ -10,7 +10,7 @@ import { pathToFileURL } from 'url'
 
 // Import utilities
 import { logger } from '../../utils/logger.js'
-import { CLIError, fromError } from '../../utils/errors.js'
+import { CLIError, fromCLIError } from '../../utils/errors.js'
 
 export interface GenPlugin {
   name: string
@@ -29,7 +29,7 @@ export interface GenPlugin {
 /**
  * Load all configured plugins
  */
-export async function loadPlugins(pluginNames: string[]): Promise<Result<GenPlugin[], CLIError>> {
+export async function loadPlugins(pluginNames: string[]): Promise<Result<GenPlugin[], any>> {
   try {
     const plugins: GenPlugin[] = []
 
@@ -48,14 +48,14 @@ export async function loadPlugins(pluginNames: string[]): Promise<Result<GenPlug
 
     return ok(plugins)
   } catch (error) {
-    return err(fromError(error))
+    return err(fromCLIError(error))
   }
 }
 
 /**
  * Load a single plugin
  */
-async function loadPlugin(pluginName: string): Promise<Result<GenPlugin, CLIError>> {
+async function loadPlugin(pluginName: string): Promise<Result<GenPlugin, any>> {
   try {
     let pluginModule: any
 
@@ -100,7 +100,7 @@ async function loadPlugin(pluginName: string): Promise<Result<GenPlugin, CLIErro
 
     return ok(plugin)
   } catch (error) {
-    return err(fromError(error))
+    return err(fromCLIError(error))
   }
 }
 
@@ -194,7 +194,7 @@ export function getPluginInfo(plugin: GenPlugin): {
  * List available plugins in the ecosystem
  * This would typically fetch from an API or registry
  */
-export async function listAvailablePlugins(): Promise<Result<any[], CLIError>> {
+export async function listAvailablePlugins(): Promise<Result<any[], any>> {
   try {
     // Placeholder - in a real implementation, this would fetch from npm or a plugin registry
     const availablePlugins = [
@@ -217,6 +217,6 @@ export async function listAvailablePlugins(): Promise<Result<any[], CLIError>> {
 
     return ok(availablePlugins)
   } catch (error) {
-    return err(fromError(error))
+    return err(fromCLIError(error))
   }
 }

@@ -3,15 +3,33 @@
  * Type-safe error creation functions
  */
 
-import type { ErrorCode, ErrorInstance, ErrorBase } from './types'
+import type { ErrorBase } from './types'
 import { ErrorRegistry, BaseError, ValidationError, DatabaseError, PermissionError, NotFoundError, AuthenticationError, AuthorizationError, NetworkError, ConfigurationError, RuntimeError, CodeGenerationError, TemplateError, SchemaError, FileSystemError } from './registry'
-import { getErrorDefinition } from './catalog'
+import { getErrorDefinition, ErrorCodes, type ErrorCode } from './catalog'
+
+type ErrorCtor = new (
+  code?: ErrorCode,
+  message?: string,
+  context?: Record<string, any>,
+  cause?: Error
+) => ErrorBase
+
+function createTypedError(
+  Ctor: ErrorCtor,
+  code: ErrorCode,
+  message?: string,
+  context?: Record<string, any>,
+  cause?: Error
+): ErrorBase {
+  const definition = getErrorDefinition(code)
+  return new Ctor(code, message || definition?.message, context, cause)
+}
 
 /**
  * Create a base error
  */
 export function createBaseError(
-  code?: ErrorCode,
+  code?: string,
   message?: string,
   context?: Record<string, any>,
   cause?: Error
@@ -23,169 +41,156 @@ export function createBaseError(
  * Create a validation error
  */
 export function createValidationError(
-  code: ErrorCode = 'VALIDATION_DATA_INVALID' as ErrorCode,
+  code: ErrorCode = ErrorCodes.VALIDATION_DATA_INVALID,
   message?: string,
   context?: Record<string, any>,
   cause?: Error
 ): ErrorBase {
-  const definition = getErrorDefinition(code)
-  return new ValidationError(code, message || definition?.message, context, cause) as ErrorBase
+  return createTypedError(ValidationError as unknown as ErrorCtor, code, message, context, cause)
 }
 
 /**
  * Create a database error
  */
 export function createDatabaseError(
-  code: ErrorCode = 'DB_FOREIGN_KEY_VIOLATION' as ErrorCode,
+  code: ErrorCode = ErrorCodes.DB_FOREIGN_KEY_VIOLATION,
   message?: string,
   context?: Record<string, any>,
   cause?: Error
 ): ErrorBase {
-  const definition = getErrorDefinition(code)
-  return new DatabaseError(code, message || definition?.message, context, cause) as ErrorBase
+  return createTypedError(DatabaseError as unknown as ErrorCtor, code, message, context, cause)
 }
 
 /**
  * Create a permission error
  */
 export function createPermissionError(
-  code: ErrorCode = 'PERMISSION_DENIED' as ErrorCode,
+  code: ErrorCode = ErrorCodes.PERMISSION_DENIED,
   message?: string,
   context?: Record<string, any>,
   cause?: Error
 ): ErrorBase {
-  const definition = getErrorDefinition(code)
-  return new PermissionError(code, message || definition?.message, context, cause) as ErrorBase
+  return createTypedError(PermissionError as unknown as ErrorCtor, code, message, context, cause)
 }
 
 /**
  * Create a not found error
  */
 export function createNotFoundError(
-  code: ErrorCode = 'FILE_NOT_FOUND' as ErrorCode,
+  code: ErrorCode = ErrorCodes.FILE_NOT_FOUND,
   message?: string,
   context?: Record<string, any>,
   cause?: Error
 ): ErrorBase {
-  const definition = getErrorDefinition(code)
-  return new NotFoundError(code, message || definition?.message, context, cause) as ErrorBase
+  return createTypedError(NotFoundError as unknown as ErrorCtor, code, message, context, cause)
 }
 
 /**
  * Create an authentication error
  */
 export function createAuthenticationError(
-  code: ErrorCode = 'AUTH_INVALID_CREDENTIALS' as ErrorCode,
+  code: ErrorCode = ErrorCodes.AUTH_INVALID_CREDENTIALS,
   message?: string,
   context?: Record<string, any>,
   cause?: Error
 ): ErrorBase {
-  const definition = getErrorDefinition(code)
-  return new AuthenticationError(code, message || definition?.message, context, cause) as ErrorBase
+  return createTypedError(AuthenticationError as unknown as ErrorCtor, code, message, context, cause)
 }
 
 /**
  * Create an authorization error
  */
 export function createAuthorizationError(
-  code: ErrorCode = 'AUTH_UNAUTHORIZED' as ErrorCode,
+  code: ErrorCode = ErrorCodes.AUTH_UNAUTHORIZED,
   message?: string,
   context?: Record<string, any>,
   cause?: Error
 ): ErrorBase {
-  const definition = getErrorDefinition(code)
-  return new AuthorizationError(code, message || definition?.message, context, cause) as ErrorBase
+  return createTypedError(AuthorizationError as unknown as ErrorCtor, code, message, context, cause)
 }
 
 /**
  * Create a network error
  */
 export function createNetworkError(
-  code: ErrorCode = 'NETWORK_CONNECTION_FAILED' as ErrorCode,
+  code: ErrorCode = ErrorCodes.NETWORK_CONNECTION_FAILED,
   message?: string,
   context?: Record<string, any>,
   cause?: Error
 ): ErrorBase {
-  const definition = getErrorDefinition(code)
-  return new NetworkError(code, message || definition?.message, context, cause) as ErrorBase
+  return createTypedError(NetworkError as unknown as ErrorCtor, code, message, context, cause)
 }
 
 /**
  * Create a configuration error
  */
 export function createConfigurationError(
-  code: ErrorCode = 'CONFIG_INVALID' as ErrorCode,
+  code: ErrorCode = ErrorCodes.CONFIG_INVALID,
   message?: string,
   context?: Record<string, any>,
   cause?: Error
 ): ErrorBase {
-  const definition = getErrorDefinition(code)
-  return new ConfigurationError(code, message || definition?.message, context, cause) as ErrorBase
+  return createTypedError(ConfigurationError as unknown as ErrorCtor, code, message, context, cause)
 }
 
 /**
  * Create a runtime error
  */
 export function createRuntimeError(
-  code: ErrorCode = 'RUNTIME_UNEXPECTED_ERROR' as ErrorCode,
+  code: ErrorCode = ErrorCodes.RUNTIME_UNEXPECTED_ERROR,
   message?: string,
   context?: Record<string, any>,
   cause?: Error
 ): ErrorBase {
-  const definition = getErrorDefinition(code)
-  return new RuntimeError(code, message || definition?.message, context, cause) as ErrorBase
+  return createTypedError(RuntimeError as unknown as ErrorCtor, code, message, context, cause)
 }
 
 /**
  * Create a code generation error
  */
 export function createCodeGenerationError(
-  code: ErrorCode = 'GENERATION_TEMPLATE_ERROR' as ErrorCode,
+  code: ErrorCode = ErrorCodes.GENERATION_TEMPLATE_ERROR,
   message?: string,
   context?: Record<string, any>,
   cause?: Error
 ): ErrorBase {
-  const definition = getErrorDefinition(code)
-  return new CodeGenerationError(code, message || definition?.message, context, cause) as ErrorBase
+  return createTypedError(CodeGenerationError as unknown as ErrorCtor, code, message, context, cause)
 }
 
 /**
  * Create a template error
  */
 export function createTemplateError(
-  code: ErrorCode = 'GENERATION_TEMPLATE_ERROR' as ErrorCode,
+  code: ErrorCode = ErrorCodes.GENERATION_TEMPLATE_ERROR,
   message?: string,
   context?: Record<string, any>,
   cause?: Error
 ): ErrorBase {
-  const definition = getErrorDefinition(code)
-  return new TemplateError(code, message || definition?.message, context, cause) as ErrorBase
+  return createTypedError(TemplateError as unknown as ErrorCtor, code, message, context, cause)
 }
 
 /**
  * Create a schema error
  */
 export function createSchemaError(
-  code: ErrorCode = 'VALIDATION_SCHEMA_INVALID' as ErrorCode,
+  code: ErrorCode = ErrorCodes.VALIDATION_SCHEMA_INVALID,
   message?: string,
   context?: Record<string, any>,
   cause?: Error
 ): ErrorBase {
-  const definition = getErrorDefinition(code)
-  return new SchemaError(code, message || definition?.message, context, cause) as ErrorBase
+  return createTypedError(SchemaError as unknown as ErrorCtor, code, message, context, cause)
 }
 
 /**
  * Create a file system error
  */
 export function createFileSystemError(
-  code: ErrorCode = 'FILE_NOT_FOUND' as ErrorCode,
+  code: ErrorCode = ErrorCodes.FILE_NOT_FOUND,
   message?: string,
   context?: Record<string, any>,
   cause?: Error
 ): ErrorBase {
-  const definition = getErrorDefinition(code)
-  return new FileSystemError(code, message || definition?.message, context, cause) as ErrorBase
+  return createTypedError(FileSystemError as unknown as ErrorCtor, code, message, context, cause)
 }
 
 /**
@@ -205,7 +210,7 @@ export function createError(
  */
 export function createFromError(
   error: unknown,
-  code: ErrorCode = 'RUNTIME_UNEXPECTED_ERROR' as ErrorCode,
+  code: ErrorCode = ErrorCodes.RUNTIME_UNEXPECTED_ERROR,
   context?: Record<string, any>
 ): ErrorBase {
   if (error instanceof Error && 'code' in error) {
@@ -323,7 +328,7 @@ export class ErrorBuilder {
   build(): ErrorBase {
     if (!this.code) {
       throw createConfigurationError(
-        'CONFIG_MISSING_REQUIRED' as ErrorCode,
+        ErrorCodes.CONFIG_MISSING_REQUIRED,
         'Error code is required for ErrorBuilder'
       )
     }

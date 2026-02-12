@@ -72,6 +72,28 @@ declare global {
  */
 export type ComponentRef<K extends keyof AllComponents = keyof AllComponents> = AllComponents[K]
 
+export interface ComponentReference<K extends keyof AllComponents = keyof AllComponents> {
+  key: K
+}
+
+export type ResolvableComponent<K extends keyof AllComponents = keyof AllComponents> =
+  | ComponentRef<K>
+  | ComponentReference<K>
+
+export function component<K extends keyof AllComponents>(key: K): ComponentReference<K> {
+  return { key }
+}
+
+export function resolveComponent<K extends keyof AllComponents>(
+  value: ResolvableComponent<K> | undefined
+): ComponentRef<K> | undefined {
+  if (!value) return undefined
+  if (typeof value === 'function') {
+    return value as ComponentRef<K>
+  }
+  return ComponentRegistry.get(value.key)
+}
+
 /**
  * Component with props
  */

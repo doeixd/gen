@@ -71,17 +71,17 @@ export interface DatabaseGenerator {
   /**
    * Generate database code for an entity
    */
-  generate<T>(entity: Entity<T>): GeneratedDatabaseCode
+  generate<T extends Record<string, any>>(entity: Entity<T>): GeneratedDatabaseCode
 
   /**
    * Generate database code for multiple entities
    */
-  generateMultiple<T>(entities: Entity<T>[]): GeneratedDatabaseCode[]
+  generateMultiple<T extends Record<string, any>>(entities: Entity<T>[]): GeneratedDatabaseCode[]
 
   /**
    * Generate migration files for entities
    */
-  generateMigrations<T>(entities: Entity<T>[], version: string): {
+  generateMigrations<T extends Record<string, any>>(entities: Entity<T>[], version: string): {
     up: string[]
     down: string[]
     version: string
@@ -96,7 +96,7 @@ export interface APIGenerator {
   /**
    * Generate API code for an entity
    */
-  generate<T>(entity: Entity<T>, options?: {
+  generate<T extends Record<string, any>>(entity: Entity<T>, options?: {
     framework?: 'express' | 'fastify' | 'hono' | 'koa'
     includeValidation?: boolean
     includePermissions?: boolean
@@ -108,7 +108,7 @@ export interface APIGenerator {
   /**
    * Generate API code for multiple entities
    */
-  generateMultiple<T>(entities: Entity<T>[], options?: {
+  generateMultiple<T extends Record<string, any>>(entities: Entity<T>[], options?: {
     framework?: 'express' | 'fastify' | 'hono' | 'koa'
     includeValidation?: boolean
     includePermissions?: boolean
@@ -125,7 +125,7 @@ export interface FrontendGenerator {
   /**
    * Generate frontend code for an entity
    */
-  generate<T>(entity: Entity<T>, options?: {
+  generate<T extends Record<string, any>>(entity: Entity<T>, options?: {
     framework?: 'react' | 'vue' | 'svelte' | 'angular'
     includeComponents?: boolean
     includeForms?: boolean
@@ -136,7 +136,7 @@ export interface FrontendGenerator {
   /**
    * Generate frontend code for multiple entities
    */
-  generateMultiple<T>(entities: Entity<T>[], options?: {
+  generateMultiple<T extends Record<string, any>>(entities: Entity<T>[], options?: {
     framework?: 'react' | 'vue' | 'svelte' | 'angular'
     includeComponents?: boolean
     includeForms?: boolean
@@ -152,7 +152,7 @@ export interface TestGenerator {
   /**
    * Generate test code for an entity
    */
-  generate<T>(entity: Entity<T>, options?: {
+  generate<T extends Record<string, any>>(entity: Entity<T>, options?: {
     framework?: 'vitest' | 'jest' | 'mocha'
     includeUnitTests?: boolean
     includeIntegrationTests?: boolean
@@ -165,7 +165,7 @@ export interface TestGenerator {
   /**
    * Generate test code for multiple entities
    */
-  generateMultiple<T>(entities: Entity<T>[], options?: {
+  generateMultiple<T extends Record<string, any>>(entities: Entity<T>[], options?: {
     framework?: 'vitest' | 'jest' | 'mocha'
     includeUnitTests?: boolean
     includeIntegrationTests?: boolean
@@ -183,12 +183,12 @@ export interface DocumentationGenerator {
   /**
    * Generate documentation for an entity
    */
-  generate<T>(entity: Entity<T>): GeneratedDocumentation
+  generate<T extends Record<string, any>>(entity: Entity<T>): GeneratedDocumentation
 
   /**
    * Generate documentation for multiple entities
    */
-  generateMultiple<T>(entities: Entity<T>[]): GeneratedDocumentation[]
+  generateMultiple<T extends Record<string, any>>(entities: Entity<T>[]): GeneratedDocumentation[]
 }
 
 /**

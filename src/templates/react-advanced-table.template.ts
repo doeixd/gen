@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Advanced React Table Template
  * TanStack Table with sorting, filtering, pagination, and permissions

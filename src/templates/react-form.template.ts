@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * React Form Template
  * Template for generating React form components

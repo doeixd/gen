@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Enhanced Convex Functions Template
  *

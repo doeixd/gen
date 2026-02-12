@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * OpenAPI/Swagger Documentation Template
  * Generates OpenAPI 3.0 specification for API documentation

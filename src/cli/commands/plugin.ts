@@ -10,7 +10,7 @@ import fs from 'fs'
 
 // Import utilities
 import { logger } from '../../utils/logger.js'
-import { CLIError, fromError } from '../../utils/errors.js'
+import { CLIError, fromCLIError } from '../../utils/errors.js'
 
 export function createPluginCommand(): Command {
   const command = new Command('plugin')
@@ -52,7 +52,7 @@ function createPluginListCommand(): Command {
           return
         }
 
-        plugins.forEach((plugin, index) => {
+        plugins.forEach((plugin: string, index: number) => {
           logger.info(`${index + 1}. ${plugin}`)
         })
 
@@ -256,7 +256,7 @@ function createPluginCreateCommand(): Command {
 }
 
 // Helper functions
-function loadCLIConfig(): Result<any, CLIError> {
+function loadCLIConfig(): Result<any, any> {
   try {
     const configPath = path.join(process.cwd(), '.genrc.json')
     if (fs.existsSync(configPath)) {
@@ -264,21 +264,21 @@ function loadCLIConfig(): Result<any, CLIError> {
     }
     return ok({ plugins: [] })
   } catch (error) {
-    return err(fromError(error))
+    return err(fromCLIError(error))
   }
 }
 
-function saveCLIConfig(config: any): Result<void, CLIError> {
+function saveCLIConfig(config: any): Result<void, any> {
   try {
     const configPath = path.join(process.cwd(), '.genrc.json')
     fs.writeFileSync(configPath, JSON.stringify(config, null, 2))
     return ok(undefined)
   } catch (error) {
-    return err(fromError(error))
+    return err(fromCLIError(error))
   }
 }
 
-async function installPlugin(pluginName: string, options: any): Promise<Result<void, CLIError>> {
+async function installPlugin(pluginName: string, options: any): Promise<Result<void, any>> {
   try {
     const { execSync } = await import('child_process')
 
@@ -290,11 +290,11 @@ async function installPlugin(pluginName: string, options: any): Promise<Result<v
 
     return ok(undefined)
   } catch (error) {
-    return err(fromError(error))
+    return err(fromCLIError(error))
   }
 }
 
-async function uninstallPlugin(pluginName: string): Promise<Result<void, CLIError>> {
+async function uninstallPlugin(pluginName: string): Promise<Result<void, any>> {
   try {
     const { execSync } = await import('child_process')
 
@@ -303,11 +303,11 @@ async function uninstallPlugin(pluginName: string): Promise<Result<void, CLIErro
 
     return ok(undefined)
   } catch (error) {
-    return err(fromError(error))
+    return err(fromCLIError(error))
   }
 }
 
-async function createPluginTemplate(pluginName: string, template: string, useTypeScript: boolean): Promise<Result<void, CLIError>> {
+async function createPluginTemplate(pluginName: string, template: string, useTypeScript: boolean): Promise<Result<void, any>> {
   try {
     const ext = useTypeScript ? 'ts' : 'js'
 
@@ -474,11 +474,11 @@ npm test
 
     return ok(undefined)
   } catch (error) {
-    return err(fromError(error))
+    return err(fromCLIError(error))
   }
 }
 
-async function createPluginPackageJson(pluginName: string, useTypeScript: boolean): Promise<Result<void, CLIError>> {
+async function createPluginPackageJson(pluginName: string, useTypeScript: boolean): Promise<Result<void, any>> {
   try {
     const packageJson = {
       name: `gen-plugin-${pluginName}`,
@@ -526,6 +526,6 @@ async function createPluginPackageJson(pluginName: string, useTypeScript: boolea
 
     return ok(undefined)
   } catch (error) {
-    return err(fromError(error))
+    return err(fromCLIError(error))
   }
 }

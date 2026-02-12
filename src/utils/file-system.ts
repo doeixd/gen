@@ -9,6 +9,9 @@ export interface FileOptions {
   overwrite?: boolean
   backup?: boolean
   dryRun?: boolean
+  createDirectories?: boolean
+  addHeader?: boolean
+  eslintDisable?: boolean
 }
 
 /**

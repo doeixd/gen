@@ -10,7 +10,7 @@ import fs from 'fs'
 
 // Import utilities
 import { logger } from '../../utils/logger.js'
-import { CLIError, fromError } from '../../utils/errors.js'
+import { CLIError, fromCLIError } from '../../utils/errors.js'
 import { DEFAULT_CONFIG } from '../../utils/config.js'
 
 export function createConfigCommand(): Command {
@@ -241,7 +241,7 @@ function createConfigInitCommand(): Command {
 }
 
 // Helper functions
-function loadConfig(global: boolean): Result<any, CLIError> {
+function loadConfig(global: boolean): Result<any, any> {
   try {
     const configPath = getConfigPath(global)
 
@@ -253,11 +253,11 @@ function loadConfig(global: boolean): Result<any, CLIError> {
     // Return defaults if no config exists
     return ok({ ...DEFAULT_CONFIG, plugins: [] })
   } catch (error) {
-    return err(fromError(error))
+    return err(fromCLIError(error))
   }
 }
 
-function saveConfig(config: any, global: boolean): Result<void, CLIError> {
+function saveConfig(config: any, global: boolean): Result<void, any> {
   try {
     const configPath = getConfigPath(global)
     const dir = path.dirname(configPath)
@@ -269,7 +269,7 @@ function saveConfig(config: any, global: boolean): Result<void, CLIError> {
     fs.writeFileSync(configPath, JSON.stringify(config, null, 2))
     return ok(undefined)
   } catch (error) {
-    return err(fromError(error))
+    return err(fromCLIError(error))
   }
 }
 

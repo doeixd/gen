@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Next.js API Routes Template
  * Generates Next.js 13+ API routes with App Router

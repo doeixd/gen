@@ -4,15 +4,15 @@
  */
 
 import type {
-  ErrorConstructor,
+  ErrorClass,
+  ErrorBase,
   ErrorTypes,
   AllErrorTypes,
   ErrorRegistryEntry,
   ErrorFactory,
-  ErrorCode,
   ErrorDefinition
 } from './types'
-import { ErrorCodes, getErrorDefinition } from './catalog'
+import { ErrorCodes, getErrorDefinition, type ErrorCode } from './catalog'
 
 /**
  * Default base error class when none is registered
@@ -364,12 +364,12 @@ export class ErrorRegistry {
   static register<K extends keyof AllErrorTypes>(
     name: K,
     constructor: AllErrorTypes[K],
-    factory?: ErrorFactory<AllErrorTypes[K]>
+    factory?: ErrorFactory<NonNullable<AllErrorTypes[K]>>
   ): void {
     this.initializeDefaults()
 
     this.registry.set(name as string, {
-      constructor: constructor as ErrorConstructor,
+      constructor: constructor as unknown as ErrorClass,
       factory: factory as ErrorFactory | undefined
     })
   }
@@ -390,19 +390,19 @@ export class ErrorRegistry {
   /**
    * Get a registered error constructor
    */
-  static get<K extends keyof AllErrorTypes>(name: K): AllErrorTypes[K] | undefined {
+  static get<K extends keyof AllErrorTypes>(name: K): NonNullable<AllErrorTypes[K]> | undefined {
     this.initializeDefaults()
     const entry = this.registry.get(name as string)
-    return entry?.constructor as AllErrorTypes[K] | undefined
+    return entry?.constructor as NonNullable<AllErrorTypes[K]> | undefined
   }
 
   /**
    * Get a registered error factory
    */
-  static getFactory<K extends keyof AllErrorTypes>(name: K): ErrorFactory<AllErrorTypes[K]> | undefined {
+  static getFactory<K extends keyof AllErrorTypes>(name: K): ErrorFactory<NonNullable<AllErrorTypes[K]>> | undefined {
     this.initializeDefaults()
     const entry = this.registry.get(name as string)
-    return entry?.factory as ErrorFactory<AllErrorTypes[K]> | undefined
+    return entry?.factory as ErrorFactory<NonNullable<AllErrorTypes[K]>> | undefined
   }
 
   /**
@@ -410,8 +410,8 @@ export class ErrorRegistry {
    */
   static create<K extends keyof AllErrorTypes>(
     name: K,
-    ...args: ConstructorParameters<AllErrorTypes[K]>
-  ): InstanceType<AllErrorTypes[K]> {
+    ...args: any[]
+  ): InstanceType<NonNullable<AllErrorTypes[K]>> {
     const Constructor = this.get(name)
     if (!Constructor) {
       throw new DefaultError(
@@ -421,7 +421,7 @@ export class ErrorRegistry {
       )
     }
 
-    return new Constructor(...args)
+    return new (Constructor as unknown as ErrorClass)(...args) as InstanceType<NonNullable<AllErrorTypes[K]>>
   }
 
   /**
@@ -429,15 +429,15 @@ export class ErrorRegistry {
    */
   static createWithFactory<K extends keyof AllErrorTypes>(
     name: K,
-    ...args: Parameters<ErrorFactory<AllErrorTypes[K]>>
-  ): InstanceType<AllErrorTypes[K]> {
+    ...args: any[]
+  ): InstanceType<NonNullable<AllErrorTypes[K]>> {
     const factory = this.getFactory(name)
     if (factory) {
-      return factory(...args)
+      return (factory as (...factoryArgs: any[]) => InstanceType<NonNullable<AllErrorTypes[K]>>)(...args)
     }
 
     // Fall back to constructor with same args
-    return this.create(name, ...(args as ConstructorParameters<AllErrorTypes[K]>))
+    return this.create(name, ...args)
   }
 
   /**
@@ -536,4 +536,4 @@ export {
 }
 
 // Export global types for convenience
-export type { ErrorBase, ErrorConstructor, ErrorTypes, AllErrorTypes }
+export type { ErrorBase, ErrorClass, ErrorTypes, AllErrorTypes }

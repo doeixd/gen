@@ -8,13 +8,8 @@
  */
 
 import path from 'path'
-import { fileURLToPath } from 'url'
 import fs from 'fs'
 import { Result, ok, err } from 'neverthrow'
-import pluralize from 'pluralize'
-
-// Import generator interfaces
-import type { CustomGenerator } from '../generator-interfaces'
 
 // Import generators
 import { APIGenerator } from '../generators/api.js'
@@ -27,8 +22,6 @@ import {
   parseCliArgs,
   mergeConfig,
   validateConfig,
-  generateFileHeader,
-  addEslintDisable,
   loadConfigFile,
   loadGeneratorScript,
   loadArgFiles,
@@ -37,16 +30,8 @@ import {
 } from '../utils/config.js'
 import { logger } from '../utils/logger.js'
 import { GeneratorError, GeneratorErrorCode, fromError } from '../utils/errors.js'
-import { readSchemaFile, type ParsedField } from '../utils/schema-parser.js'
+import { readSchemaFile } from '../utils/schema-parser.js'
 import { ensureDirectory, writeFile } from '../utils/file-system.js'
-import { zodToCode } from '../utils/zod-codegen.js'
-
-// Import field mappings (similar to old implementation)
-import {
-  resolveFieldConfig,
-  excludeFromForms,
-  type FieldMapping,
-} from '../field-mappings.config.js'
 
 // Import templates
 import {
@@ -61,14 +46,13 @@ import {
   generateRailsRoutes,
   generateNextJsAPI,
   generateOpenAPI,
-  generateUnitTests,
-  generateIntegrationTests,
-  generateE2ETests,
-  generateTestDataFactory,
   generateDockerCompose,
   generateDockerfile,
   generateGitHubActions,
   generateEnvironmentConfig,
+  generateConvexBetterAuthTanstack,
+  generateSpacetimeBetterAuthTanstack,
+  generateZeroBetterAuthTanstack,
   type CrudRoutesTemplateOptions,
   type ConvexFunctionsTemplateOptions,
   type TanStackFormTemplateOptions,
@@ -76,8 +60,10 @@ import {
   type RailsRoutesTemplateOptions,
   type NextJsAPITemplateOptions,
   type OpenAPITemplateOptions,
-  type TestingTemplateOptions,
   type DeploymentTemplateOptions,
+  type ConvexBetterAuthTanstackTemplateOptions,
+  type SpacetimeBetterAuthTanstackTemplateOptions,
+  type ZeroBetterAuthTanstackTemplateOptions,
 } from '../templates/index.js'
 
 /**
@@ -104,16 +90,6 @@ function getConfig(): Result<GeneratorConfig, GeneratorError> {
       )
     )
   }
-}
-
-/**
- * Generate Zod schema code from field configuration
- */
-function generateZodSchemaCode(field: ParsedField, config: GeneratorConfig): Result<string, GeneratorError> {
-  return zodToCode(field, {
-    includeErrorMessages: config.codegen.includeErrorMessages,
-    useStandardSchema: config.codegen.useStandardSchema,
-  })
 }
 
 /**
@@ -567,6 +543,233 @@ async function generateDeployment(args: GeneratorArgs): Promise<Result<void, Gen
     }
 
     logger.success('Generated deployment configurations')
+
+    return ok(undefined)
+  } catch (error) {
+    return err(fromError(error))
+  }
+}
+
+/**
+ * Generate Convex + Better Auth + TanStack Start integration files
+ */
+export async function generateConvexAuth(args: GeneratorArgs): Promise<Result<void, GeneratorError>> {
+  try {
+    const { config, entities } = args
+    logger.section('🔐 Generating Convex + Better Auth + TanStack Start Integration')
+
+    const profile = config.integrations?.convexAuthProfile ?? 'prod-ready'
+    const mode = profile === 'existing-app-merge'
+      ? 'patch'
+      : (config.integrations?.convexAuthMode ?? 'scaffold')
+
+    const options: ConvexBetterAuthTanstackTemplateOptions = {
+      siteUrl: 'http://localhost:3000',
+      entities,
+      profile,
+    }
+
+    let files = generateConvexBetterAuthTanstack(options)
+
+    if (profile === 'minimal') {
+      const minimalFiles = [
+        'convex/convex.config.ts',
+        'convex/auth.config.ts',
+        'convex/auth.ts',
+        'convex/http.ts',
+        'convex/generated-crud.ts',
+        'src/routes/api/auth/$.ts',
+        '.env.local.example',
+      ]
+      files = Object.fromEntries(Object.entries(files).filter(([p]) => minimalFiles.includes(p)))
+    }
+
+    const patchPathMap: Record<string, string> = {
+      'src/routes/__root.tsx': 'src/routes/__root.convex-auth.patch.tsx',
+      'src/routes/router.tsx': 'src/routes/router.convex-auth.patch.tsx',
+      'vite.better-auth.snippet.ts': 'vite.convex-auth.patch.ts',
+    }
+
+    for (const [relativePath, content] of Object.entries(files)) {
+      let outputPath = relativePath
+
+      if (mode === 'patch' && relativePath in patchPathMap) {
+        const sourcePath = relativePath === 'vite.better-auth.snippet.ts' ? 'vite.config.ts' : relativePath
+        if (fs.existsSync(sourcePath)) {
+          outputPath = patchPathMap[relativePath]
+        } else if (relativePath === 'vite.better-auth.snippet.ts') {
+          outputPath = 'vite.config.ts'
+        } else {
+          outputPath = relativePath
+        }
+      }
+
+      const writeResult = writeFile(outputPath, content, {
+        createDirectories: true,
+        overwrite: config.overwrite,
+        backup: config.createBackups,
+        dryRun: config.dryRun,
+        addHeader: config.header.includeHeader,
+        eslintDisable: config.header.eslintDisable,
+      })
+
+      if (writeResult.isErr()) {
+        return err(writeResult.error)
+      }
+
+      logger.success(`Generated ${outputPath}`)
+    }
+
+    if (mode === 'patch') {
+      logger.info('Patch mode enabled: existing root/router/vite files are preserved and *.convex-auth.patch.* files were generated when needed.')
+    }
+
+    return ok(undefined)
+  } catch (error) {
+    return err(fromError(error))
+  }
+}
+
+/**
+ * Generate SpacetimeDB + Better Auth + TanStack Start integration files
+ */
+export async function generateSpacetimeAuth(args: GeneratorArgs): Promise<Result<void, GeneratorError>> {
+  try {
+    const { config, entities } = args
+    logger.section('🛰️ Generating SpacetimeDB + Better Auth + TanStack Start Integration')
+
+    const profile = config.integrations?.spacetimeAuthProfile ?? 'prod-ready'
+    const mode = profile === 'existing-app-merge'
+      ? 'patch'
+      : (config.integrations?.spacetimeAuthMode ?? 'scaffold')
+
+    const options: SpacetimeBetterAuthTanstackTemplateOptions = {
+      siteUrl: 'http://localhost:3000',
+      spacetimeHost: 'ws://127.0.0.1:3000',
+      spacetimeModuleName: 'my-spacetime-module',
+      entities,
+      profile,
+    }
+
+    let files = generateSpacetimeBetterAuthTanstack(options)
+
+    if (profile === 'minimal') {
+      const minimalFiles = [
+        'spacetimedb/src/index.ts',
+        'src/lib/spacetime-auth-adapter.ts',
+        'src/lib/auth.ts',
+        'src/routes/api/auth/$.ts',
+        '.env.spacetime.example',
+      ]
+      files = Object.fromEntries(Object.entries(files).filter(([p]) => minimalFiles.includes(p)))
+    }
+
+    const patchPathMap: Record<string, string> = {
+      'src/routes/__root.tsx': 'src/routes/__root.spacetime-auth.patch.tsx',
+      'src/routes/router.tsx': 'src/routes/router.spacetime-auth.patch.tsx',
+    }
+
+    for (const [relativePath, content] of Object.entries(files)) {
+      let outputPath = relativePath
+
+      if (mode === 'patch' && relativePath in patchPathMap && fs.existsSync(relativePath)) {
+        outputPath = patchPathMap[relativePath]
+      }
+
+      const writeResult = writeFile(outputPath, content, {
+        createDirectories: true,
+        overwrite: config.overwrite,
+        backup: config.createBackups,
+        dryRun: config.dryRun,
+        addHeader: config.header.includeHeader,
+        eslintDisable: config.header.eslintDisable,
+      })
+
+      if (writeResult.isErr()) {
+        return err(writeResult.error)
+      }
+
+      logger.success(`Generated ${outputPath}`)
+    }
+
+    if (mode === 'patch') {
+      logger.info('Patch mode enabled: existing root/router files are preserved and *.spacetime-auth.patch.* files were generated when needed.')
+    }
+
+    return ok(undefined)
+  } catch (error) {
+    return err(fromError(error))
+  }
+}
+
+/**
+ * Generate Zero + Better Auth + TanStack Start integration files
+ */
+export async function generateZeroAuth(args: GeneratorArgs): Promise<Result<void, GeneratorError>> {
+  try {
+    const { config, entities } = args
+    logger.section('0️⃣ Generating Zero + Better Auth + TanStack Start Integration')
+
+    const profile = config.integrations?.zeroAuthProfile ?? 'prod-ready'
+    const mode = profile === 'existing-app-merge'
+      ? 'patch'
+      : (config.integrations?.zeroAuthMode ?? 'scaffold')
+
+    const options: ZeroBetterAuthTanstackTemplateOptions = {
+      siteUrl: 'http://localhost:3000',
+      zeroCacheUrl: 'http://localhost:4848',
+      queryUrl: 'http://localhost:3000/api/zero/query',
+      mutateUrl: 'http://localhost:3000/api/zero/mutate',
+      entities,
+      profile,
+    }
+
+    let files = generateZeroBetterAuthTanstack(options)
+
+    if (profile === 'minimal') {
+      const minimalFiles = [
+        'src/zero/schema.ts',
+        'src/zero/queries.ts',
+        'src/zero/mutators.ts',
+        'src/routes/api/auth/$.ts',
+        'src/routes/api/zero/query.ts',
+        'src/routes/api/zero/mutate.ts',
+        'zero.env.example',
+      ]
+      files = Object.fromEntries(Object.entries(files).filter(([p]) => minimalFiles.includes(p)))
+    }
+
+    const patchPathMap: Record<string, string> = {
+      'src/routes/__root.tsx': 'src/routes/__root.zero-auth.patch.tsx',
+      'src/routes/router.tsx': 'src/routes/router.zero-auth.patch.tsx',
+    }
+
+    for (const [relativePath, content] of Object.entries(files)) {
+      let outputPath = relativePath
+
+      if (mode === 'patch' && relativePath in patchPathMap && fs.existsSync(relativePath)) {
+        outputPath = patchPathMap[relativePath]
+      }
+
+      const writeResult = writeFile(outputPath, content, {
+        createDirectories: true,
+        overwrite: config.overwrite,
+        backup: config.createBackups,
+        dryRun: config.dryRun,
+        addHeader: config.header.includeHeader,
+        eslintDisable: config.header.eslintDisable,
+      })
+
+      if (writeResult.isErr()) {
+        return err(writeResult.error)
+      }
+
+      logger.success(`Generated ${outputPath}`)
+    }
+
+    if (mode === 'patch') {
+      logger.info('Patch mode enabled: existing root/router files are preserved and *.zero-auth.patch.* files were generated when needed.')
+    }
 
     return ok(undefined)
   } catch (error) {
@@ -1211,6 +1414,18 @@ async function main(): Promise<void> {
       generationPromises.push(generateDeployment(generatorArgs))
     }
 
+    if (config.targets.includes('convex-auth')) {
+      generationPromises.push(generateConvexAuth(generatorArgs))
+    }
+
+    if (config.targets.includes('spacetime-auth')) {
+      generationPromises.push(generateSpacetimeAuth(generatorArgs))
+    }
+
+    if (config.targets.includes('zero-auth')) {
+      generationPromises.push(generateZeroAuth(generatorArgs))
+    }
+
     // Wait for all generations to complete
     const results = await Promise.all(generationPromises)
 
@@ -1259,8 +1474,16 @@ async function main(): Promise<void> {
   }
 }
 
-// Run the CLI
-main().catch((error) => {
-  console.error('💥 Fatal error:', error)
-  process.exit(1)
-})
+// Run the CLI only when executed directly
+const isDirectExecution =
+  typeof process !== 'undefined' &&
+  Array.isArray(process.argv) &&
+  process.argv.length > 1 &&
+  ['generate', 'generate.ts', 'generate.js'].includes(path.basename(process.argv[1]))
+
+if (isDirectExecution) {
+  main().catch((error) => {
+    console.error('💥 Fatal error:', error)
+    process.exit(1)
+  })
+}

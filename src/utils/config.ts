@@ -42,10 +42,17 @@ export interface GeneratorConfig {
   // Additional argument files
   argFiles?: string[]
 
+  // File header options
+  header: {
+    includeHeader: boolean
+    eslintDisable: boolean
+  }
+
   // Paths
   paths: {
     schema: string
     database: string
+    backend: string
     api: string
     frontend: string
     tests: string
@@ -120,6 +127,16 @@ export interface GeneratorConfig {
   files: {
     extension: string
   }
+
+  // Integration-specific options
+  integrations: {
+    convexAuthMode: 'scaffold' | 'patch'
+    spacetimeAuthMode: 'scaffold' | 'patch'
+    zeroAuthMode: 'scaffold' | 'patch'
+    convexAuthProfile: 'minimal' | 'prod-ready' | 'existing-app-merge'
+    spacetimeAuthProfile: 'minimal' | 'prod-ready' | 'existing-app-merge'
+    zeroAuthProfile: 'minimal' | 'prod-ready' | 'existing-app-merge'
+  }
 }
 
 export const DEFAULT_CONFIG: GeneratorConfig = {
@@ -127,9 +144,14 @@ export const DEFAULT_CONFIG: GeneratorConfig = {
   overwrite: true,
   createBackups: true,
   logLevel: 'info',
+  header: {
+    includeHeader: true,
+    eslintDisable: true
+  },
   paths: {
     schema: './schema.ts',
     database: './generated/database',
+    backend: './generated/backend',
     api: './generated/api',
     frontend: './generated/frontend',
     tests: './generated/tests',
@@ -204,6 +226,14 @@ export const DEFAULT_CONFIG: GeneratorConfig = {
   },
   files: {
     extension: 'ts'
+  },
+  integrations: {
+    convexAuthMode: 'scaffold',
+    spacetimeAuthMode: 'scaffold',
+    zeroAuthMode: 'scaffold',
+    convexAuthProfile: 'prod-ready',
+    spacetimeAuthProfile: 'prod-ready',
+    zeroAuthProfile: 'prod-ready'
   }
 }
 
@@ -325,6 +355,72 @@ export function parseCliArgs(args: string[]): Partial<GeneratorConfig> {
         }
         break
 
+      case '--convex-auth-mode':
+        if (i + 1 < args.length) {
+          const mode = args[i + 1]
+          if (mode === 'scaffold' || mode === 'patch') {
+            if (!config.integrations) config.integrations = DEFAULT_CONFIG.integrations
+            config.integrations.convexAuthMode = mode
+            i++ // Skip next arg
+          }
+        }
+        break
+
+      case '--spacetime-auth-mode':
+        if (i + 1 < args.length) {
+          const mode = args[i + 1]
+          if (mode === 'scaffold' || mode === 'patch') {
+            if (!config.integrations) config.integrations = DEFAULT_CONFIG.integrations
+            config.integrations.spacetimeAuthMode = mode
+            i++ // Skip next arg
+          }
+        }
+        break
+
+      case '--zero-auth-mode':
+        if (i + 1 < args.length) {
+          const mode = args[i + 1]
+          if (mode === 'scaffold' || mode === 'patch') {
+            if (!config.integrations) config.integrations = DEFAULT_CONFIG.integrations
+            config.integrations.zeroAuthMode = mode
+            i++ // Skip next arg
+          }
+        }
+        break
+
+      case '--convex-auth-profile':
+        if (i + 1 < args.length) {
+          const profile = args[i + 1]
+          if (profile === 'minimal' || profile === 'prod-ready' || profile === 'existing-app-merge') {
+            if (!config.integrations) config.integrations = DEFAULT_CONFIG.integrations
+            config.integrations.convexAuthProfile = profile
+            i++
+          }
+        }
+        break
+
+      case '--spacetime-auth-profile':
+        if (i + 1 < args.length) {
+          const profile = args[i + 1]
+          if (profile === 'minimal' || profile === 'prod-ready' || profile === 'existing-app-merge') {
+            if (!config.integrations) config.integrations = DEFAULT_CONFIG.integrations
+            config.integrations.spacetimeAuthProfile = profile
+            i++
+          }
+        }
+        break
+
+      case '--zero-auth-profile':
+        if (i + 1 < args.length) {
+          const profile = args[i + 1]
+          if (profile === 'minimal' || profile === 'prod-ready' || profile === 'existing-app-merge') {
+            if (!config.integrations) config.integrations = DEFAULT_CONFIG.integrations
+            config.integrations.zeroAuthProfile = profile
+            i++
+          }
+        }
+        break
+
       case '--help':
       case '-h':
         printHelp()
@@ -372,7 +468,7 @@ Usage:
 Options:
   --generatorScript, --generator-script <path>  Path to custom generator script
   --config <path>                               Path to custom config file
-  --targets <list>                              Comma-separated list of targets (database,api,frontend,tests,docs)
+  --targets <list>                              Comma-separated list of targets (database,api,frontend,crud,convex,convex-auth,spacetime-auth,zero-auth,forms,tables,rails,nextjs,openapi,tests,docs,deployment)
   --tables <list>                               Comma-separated list of tables to generate
   --skip-tables <list>                          Comma-separated list of tables to skip
   --dry-run                                     Show what would be generated without writing files
@@ -384,7 +480,13 @@ Options:
    --frontend-framework <framework>              Frontend framework (react, vue, svelte, angular)
    --styling <type>                              Styling approach (css, styled-components, tailwind, none)
    --component-library <library>                 UI component library (material-ui, antd, chakra, etc)
-  --help, -h                                    Show this help
+   --convex-auth-mode <mode>                     Convex auth mode (scaffold, patch)
+   --spacetime-auth-mode <mode>                  Spacetime auth mode (scaffold, patch)
+   --zero-auth-mode <mode>                       Zero auth mode (scaffold, patch)
+   --convex-auth-profile <profile>               Convex auth profile (minimal, prod-ready, existing-app-merge)
+   --spacetime-auth-profile <profile>            Spacetime auth profile (minimal, prod-ready, existing-app-merge)
+   --zero-auth-profile <profile>                 Zero auth profile (minimal, prod-ready, existing-app-merge)
+   --help, -h                                    Show this help
   --version, -v                                 Show version
 
 Examples:
@@ -392,6 +494,10 @@ Examples:
   gen --generatorScript ./my-generators.js --config ./my-config.ts
   gen --tables users,posts --dry-run
   gen --api-framework fastify --log-level debug
+  gen --targets convex-auth --convex-auth-mode patch
+  gen --targets spacetime-auth --spacetime-auth-mode patch
+  gen --targets zero-auth --zero-auth-mode patch
+  gen --targets zero-auth --zero-auth-profile existing-app-merge
 `)
 }
 

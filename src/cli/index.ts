@@ -11,18 +11,18 @@ import { Command } from 'commander'
 import { Result, ok, err } from 'neverthrow'
 import path from 'path'
 import fs from 'fs'
-import { fileURLToPath } from 'url'
 
 // Import commands
 import { createGenerateCommand } from './commands/generate.js'
 import { createInitCommand } from './commands/init.js'
 import { createPluginCommand } from './commands/plugin.js'
 import { createConfigCommand } from './commands/config.js'
+import { createDoctorCommand } from './commands/doctor.js'
 
 // Import CLI utilities
 import { loadPlugins } from './plugins/index.js'
 import { logger } from '../utils/logger.js'
-import { CLIError, CLIErrorCode, fromError } from '../utils/errors.js'
+import { CLIError, CLIErrorCode, fromCLIError } from '../utils/errors.js'
 
 // CLI Configuration
 interface CLIConfig {
@@ -47,7 +47,7 @@ function loadCLIConfig(): Result<CLIConfig, CLIError> {
     }
     return ok(DEFAULT_CLI_CONFIG)
   } catch (error) {
-    return err(fromError(error, CLIErrorCode.CONFIG_ERROR))
+    return err(fromCLIError(error, CLIErrorCode.CONFIG_ERROR))
   }
 }
 
@@ -93,6 +93,7 @@ async function createCLI(): Promise<Command> {
   program.addCommand(createInitCommand())
   program.addCommand(createPluginCommand())
   program.addCommand(createConfigCommand())
+  program.addCommand(createDoctorCommand())
 
   // Register plugin commands
   if (pluginsResult.isOk()) {

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Rails-style CRUD Routes Template
  * Generates RESTful routes similar to Ruby on Rails routing

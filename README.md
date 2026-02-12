@@ -48,6 +48,14 @@
 - **Advanced Error System**: See [Error System Documentation](./ERROR_SYSTEM.md) for comprehensive error handling
 - **Tagged Template System**: Enhanced syntax highlighting with language-specific tagged templates (HTML, CSS, SQL, TypeScript, etc.)
 
+### 🧩 New Integration and Discovery Features
+- **Auth Integrations**: Built-in generators for `convex-auth`, `spacetime-auth`, and `zero-auth` with TanStack Start wiring
+- **Profiles per Integration**: `minimal`, `prod-ready`, and `existing-app-merge`
+- **Patch-Safe Mode**: Existing app files can be preserved while generating `*.patch.*` merge artifacts
+- **Entity DSL**: `createEntityKit()` with typed `field()`, `db()`, `prop()`, `routes`, and permission presets
+- **Vite Entity Discovery**: Auto-discover `*.entity.ts` files via virtual modules (`virtual:gen/entities`)
+- **Generator QA**: contract tests, golden tests, and temp-project integration tests
+
 ## 🚀 Quick Start
 
 ### Installation
@@ -555,6 +563,29 @@ Generate deployment configurations for various platforms:
 
 Gen supports a powerful plugin architecture that allows you to extend functionality with custom generators, commands, and integrations.
 
+### Use Generators Not Built In
+
+Yes, this is supported.
+
+- **Generator script mode**: point Gen to any local module (including one installed from npm/GitHub) with `--generator-script`.
+- **Plugin mode**: install a plugin package and load it through the plugin system.
+
+```bash
+# 1) Install external generator/plugin from npm
+npm install -D @your-scope/gen-plugin-foo
+
+# 2) Or install from GitHub
+npm install -D github:your-org/gen-plugin-foo
+
+# 3) Use as a generator script (path example)
+@doeixd/gen generate --generator-script ./node_modules/@your-scope/gen-plugin-foo/dist/index.js
+
+# 4) Or register with plugin command
+@doeixd/gen plugin install @your-scope/gen-plugin-foo
+```
+
+For generator scripts, Gen expects exported functions like `generateDatabase`, `generateAPI`, `generateFrontend`, `generateTests`, and `generateDocumentation` that receive a single `GeneratorArgs` object.
+
 ### Installing Plugins
 
 ```bash
@@ -600,6 +631,25 @@ export default {
 }
 ```
 
+### Testing Plugin/Generator Output
+
+When you add or update external generators, run the generator-focused tests:
+
+```bash
+# Template + CLI generator behavior + golden output tests
+npm run test:generators
+
+# Golden output tests only
+npm run test:golden
+
+# Type-check + generator tests
+npm run verify:generators
+```
+
+For a publishable external plugin structure, see `docs/plugin-authoring.md`.
+You can also copy the starter package at `examples/plugin-starter`.
+For Vite auto-discovery of distributed `*.entity.ts` files, see `docs/vite-entity-discovery-plugin.md`.
+
 ## 🖥️ CLI Usage
 
 ### Available Commands
@@ -607,6 +657,7 @@ export default {
 ```bash
 @doeixd/gen init [project-name]     # Initialize a new project
 @doeixd/gen generate [targets...]   # Generate code from entities
+@doeixd/gen doctor                  # Run integration health checks
 @doeixd/gen plugin <command>        # Manage plugins
 @doeixd/gen config <command>        # Manage configuration
 @doeixd/gen --help                  # Show help
@@ -644,6 +695,18 @@ export default {
 # Dry run (preview changes)
 @doeixd/gen generate --dry-run
 
+# Print generation plan and exit
+@doeixd/gen generate --targets=zero-auth --plan
+
+# Print generation plan JSON and exit
+@doeixd/gen generate --targets=convex-auth --json
+
+# Explain target behavior before generation
+@doeixd/gen generate --targets=spacetime-auth --explain
+
+# Interactive wizard
+@doeixd/gen generate --interactive
+
 # Backup existing files
 @doeixd/gen generate --backup
 
@@ -652,6 +715,27 @@ export default {
 
 # Verbose logging
 @doeixd/gen --verbose
+
+# Health checks (deps, env hints, patch files)
+@doeixd/gen doctor
+```
+
+### Auth Integration Commands
+
+```bash
+# Convex + Better Auth + TanStack Start
+@doeixd/gen generate --targets=convex-auth
+
+# SpacetimeDB + Better Auth + TanStack Start
+@doeixd/gen generate --targets=spacetime-auth
+
+# Zero + Better Auth + TanStack Start
+@doeixd/gen generate --targets=zero-auth
+
+# Use profile + merge-safe mode
+@doeixd/gen generate --targets=zero-auth --zero-auth-profile=existing-app-merge
+@doeixd/gen generate --targets=convex-auth --convex-auth-profile=minimal
+@doeixd/gen generate --targets=spacetime-auth --spacetime-auth-profile=prod-ready
 ```
 
 ### Target Options
@@ -705,6 +789,54 @@ export default {
 
 # Testing options
 @doeixd/gen --include-unit-tests --include-integration-tests --test-framework=vitest
+
+# Auth integration modes
+@doeixd/gen generate --targets=convex-auth --convex-auth-mode=patch
+@doeixd/gen generate --targets=spacetime-auth --spacetime-auth-mode=patch
+@doeixd/gen generate --targets=zero-auth --zero-auth-mode=patch
+
+# Auth integration profiles
+@doeixd/gen generate --targets=convex-auth --convex-auth-profile=minimal
+@doeixd/gen generate --targets=spacetime-auth --spacetime-auth-profile=prod-ready
+@doeixd/gen generate --targets=zero-auth --zero-auth-profile=existing-app-merge
+```
+
+### Vite Entity Discovery
+
+If you don't want to keep all entities in one file, use the Vite plugin:
+
+```ts
+// vite.config.ts
+import { defineConfig } from 'vite'
+import { createEntityDiscoveryPlugin } from '@doeixd/gen'
+
+export default defineConfig({
+  plugins: [createEntityDiscoveryPlugin()],
+})
+```
+
+Then import discovered entities from virtual modules:
+
+```ts
+import { entities, entityById, getEntity } from 'virtual:gen/entities'
+```
+
+See: `docs/vite-entity-discovery-plugin.md`
+
+### Generator Validation Commands
+
+```bash
+# Generator unit + behavior + golden + contract suites
+npm run test:generators
+
+# Golden outputs only
+npm run test:golden
+
+# Temp-project dependency/install integration checks
+npm run test:integration
+
+# Type-check + generator suites
+npm run verify:generators
 ```
 
 ## ⚙️ Configuration
@@ -715,20 +847,32 @@ Create custom generator scripts to extend or replace built-in generators:
 
 ```javascript
 // custom-generators.js
-export async function generateDatabase(entities, config) {
+export async function generateDatabase(args) {
+  const { config, entities } = args
   // Your custom database generation logic
-  return ok(undefined)
 }
 
-export async function generateAPI(entities, config) {
+export async function generateAPI(args) {
+  const { config, entities } = args
   // Your custom API generation logic
-  return ok(undefined)
 }
 
-export async function generateFrontend(entities, config) {
+export async function generateFrontend(args) {
+  const { config, entities } = args
   // Your custom frontend generation logic
-  return ok(undefined)
 }
+
+export default {
+  generateDatabase,
+  generateAPI,
+  generateFrontend,
+}
+```
+
+Use it with:
+
+```bash
+@doeixd/gen generate --generator-script=./custom-generators.js
 ```
 
 ### Field Mappings Configuration
@@ -759,6 +903,16 @@ export const tableFieldOverrides = {
 ```
 
 ## 📚 API Reference
+
+### Entity Type Quick Reference
+
+Deep dive: `docs/entity-type-and-generics.md`
+
+Common patterns:
+
+1. **Basic typed entity**: `Entity<T>` for strict field/DB alignment.
+2. **Extended entity**: `Entity<T, C, R, E>` to add project metadata via `E`.
+3. **DSL entity**: `createEntityKit()` for ergonomic construction with inference.
 
 ### Core Exports
 

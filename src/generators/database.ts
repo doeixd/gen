@@ -4,6 +4,7 @@
  */
 
 import type { Entity, RelationshipMapping } from '../entity'
+import { getRelationships } from '../entity'
 import type { DbColumn, DbSchema, DbRelationship, DbIndex, DbConstraint } from '../database'
 
 /**
@@ -37,7 +38,7 @@ export class DatabaseGenerator {
   /**
    * Generate all database schemas for an entity
    */
-  static generate<T>(entity: Entity<T>): GeneratedDatabaseCode {
+  static generate<T extends Record<string, any>>(entity: Entity<T>): GeneratedDatabaseCode {
     const tableName = entity.db.table.name
     const columns = entity.db.columns
 
@@ -80,7 +81,7 @@ export class DatabaseGenerator {
   /**
    * Generate Drizzle schema with full features
    */
-  private static generateDrizzleSchema<T>(entity: Entity<T>): string {
+  private static generateDrizzleSchema<T extends Record<string, any>>(entity: Entity<T>): string {
     const tableName = entity.db.table.name
     const columns = entity.db.columns
 
@@ -121,7 +122,7 @@ ${columnDefs}${indexDefs ? '\n' + indexDefs : ''}
   /**
    * Generate Prisma schema with full features
    */
-  private static generatePrismaSchema<T>(entity: Entity<T>): string {
+  private static generatePrismaSchema<T extends Record<string, any>>(entity: Entity<T>): string {
     const columns = entity.db.columns
 
     const columnDefs = Object.entries(columns).map(([name, col]: [string, DbColumn]) => {
@@ -158,7 +159,7 @@ ${columnDefs}${indexDefs ? '\n' + indexDefs : ''}
   /**
    * Generate SQL schema with full features
    */
-  private static generateSQLSchema<T>(entity: Entity<T>): string {
+  private static generateSQLSchema<T extends Record<string, any>>(entity: Entity<T>): string {
     const tableName = entity.db.table.name
     const columns = entity.db.columns
 
@@ -204,7 +205,7 @@ ${pkDef}${uniqueDefs ? '\n' + uniqueDefs : ''}${checkDefs ? '\n' + checkDefs : '
   /**
    * Generate Convex schema with full features
    */
-  private static generateConvexSchema<T>(entity: Entity<T>): string {
+  private static generateConvexSchema<T extends Record<string, any>>(entity: Entity<T>): string {
     const tableName = entity.db.table.name
     const columns = entity.db.columns
 
@@ -236,15 +237,16 @@ ${columnDefs}
   /**
    * Generate relationships code
    */
-  private static generateRelationships<T>(entity: Entity<T>): string[] {
-    if (!entity.relationships) return []
+  private static generateRelationships<T extends Record<string, any>>(entity: Entity<T>): string[] {
+    const relationships = getRelationships(entity)
+    if (relationships.length === 0) return []
 
-    return entity.relationships.map(rel => {
+    return relationships.map(rel => {
       const relType = rel.relationType
       const localTable = typeof rel.localEntity === 'string' ? rel.localEntity : rel.localEntity.db.table.name
       const foreignTable = typeof rel.foreignEntity === 'string' ? rel.foreignEntity : rel.foreignEntity.db.table.name
 
-      const fk = rel.db.foreignKey
+      const fk = rel.db?.foreignKey || { localColumn: 'id', foreignColumn: 'id', onDelete: 'cascade', onUpdate: 'cascade', indexed: false }
 
       switch (relType) {
          case 'one-to-one':
@@ -275,7 +277,7 @@ ${columnDefs}
  `.trim()
 
         case 'many-to-many':
-          if (!rel.db.junctionTable) return '-- Many-to-many relationship requires junction table'
+          if (!rel.db?.junctionTable) return '-- Many-to-many relationship requires junction table'
           const jt = rel.db.junctionTable
           return `
 -- Many-to-many relationship: ${localTable} <-> ${foreignTable} via ${jt.name}
@@ -299,7 +301,7 @@ CREATE INDEX idx_${jt.name}_${jt.foreignColumn} ON ${jt.name}(${jt.foreignColumn
   /**
    * Generate indexes
    */
-  private static generateIndexes<T>(entity: Entity<T>): string[] {
+  private static generateIndexes<T extends Record<string, any>>(entity: Entity<T>): string[] {
     if (!entity.db.indexes) return []
 
     return entity.db.indexes.map(index => {
@@ -312,7 +314,7 @@ CREATE INDEX idx_${jt.name}_${jt.foreignColumn} ON ${jt.name}(${jt.foreignColumn
   /**
    * Generate constraints
    */
-  private static generateConstraints<T>(entity: Entity<T>): string[] {
+  private static generateConstraints<T extends Record<string, any>>(entity: Entity<T>): string[] {
     if (!entity.db.constraints) return []
 
     return entity.db.constraints.map(constraint => {
@@ -334,7 +336,7 @@ CREATE INDEX idx_${jt.name}_${jt.foreignColumn} ON ${jt.name}(${jt.foreignColumn
   /**
    * Generate migrations
    */
-  private static generateMigrations<T>(entity: Entity<T>): string[] {
+  private static generateMigrations<T extends Record<string, any>>(entity: Entity<T>): string[] {
     const migrations: string[] = []
 
     // Create table migration
@@ -363,7 +365,7 @@ ${this.generateRelationships(entity).join('\n\n')}
   /**
    * Generate schema for a specific ORM
    */
-  static generateSchema<T>(entity: Entity<T>, target: 'drizzle' | 'prisma' | 'sql' | 'convex'): string {
+  static generateSchema<T extends Record<string, any>>(entity: Entity<T>, target: 'drizzle' | 'prisma' | 'sql' | 'convex'): string {
     const db = this.generate(entity)
     return db[target]
   }
@@ -371,7 +373,7 @@ ${this.generateRelationships(entity).join('\n\n')}
   /**
    * Generate migration files
    */
-  static generateMigrationFiles<T>(entities: Entity<T>[], version: string): MigrationConfig {
+  static generateMigrationFiles<T extends Record<string, any>>(entities: Entity<T>[], version: string): MigrationConfig {
     const up: string[] = []
     const down: string[] = []
 
@@ -399,7 +401,7 @@ export class SchemaGenerator {
    */
   static toDrizzle(schema: DbSchema): string {
     const tableDefs = Array.from(schema.tables.entries()).map(([tableName, table]) => {
-      const columnDefs = Array.from(table.columns.entries()).map(([colName, col]) => {
+      const columnDefs = Array.from((table.columns || new Map()).entries()).map(([colName, col]) => {
         let colDef = col.type.toDrizzle?.(colName) || `text('${colName}')`
         if (col.nullable) colDef += '.nullable()'
         if (col.unique) colDef += '.unique()'
@@ -422,7 +424,7 @@ ${tableDefs}`
    */
   static toPrisma(schema: DbSchema): string {
     const modelDefs = Array.from(schema.tables.entries()).map(([tableName, table]) => {
-      const columnDefs = Array.from(table.columns.entries()).map(([colName, col]) => {
+      const columnDefs = Array.from((table.columns || new Map()).entries()).map(([colName, col]) => {
         let colDef = col.type.toPrisma?.(colName) || `${colName} String`
         if (col.nullable) colDef += '?'
         if (col.unique) colDef += ' @unique'
@@ -443,7 +445,7 @@ ${columnDefs}
    */
   static toSQL(schema: DbSchema, dialect: 'postgres' | 'mysql' | 'sqlite' = 'postgres'): string {
     const tableDefs = Array.from(schema.tables.entries()).map(([tableName, table]) => {
-      const columnDefs = Array.from(table.columns.entries()).map(([colName, col]) => {
+      const columnDefs = Array.from((table.columns || new Map()).entries()).map(([colName, col]) => {
         let colDef = col.type.toSQL?.(colName, dialect) || `${colName} TEXT`
         if (col.nullable) colDef += ' NULL'
         else colDef += ' NOT NULL'
@@ -467,7 +469,7 @@ ${pkDef}
    */
   static toConvex(schema: DbSchema): string {
     const tableDefs = Array.from(schema.tables.entries()).map(([tableName, table]) => {
-      const columnDefs = Array.from(table.columns.entries()).map(([colName, col]) => {
+      const columnDefs = Array.from((table.columns || new Map()).entries()).map(([colName, col]) => {
         let colDef = col.type.toConvex?.(colName) || `${colName}: v.string()`
         if (col.nullable) colDef += '.optional()'
         return `  ${colDef},`

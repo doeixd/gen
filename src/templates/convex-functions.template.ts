@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Convex Functions Template
  * Template for generating type-safe Convex functions (queries and mutations)

@@ -9,14 +9,14 @@ import type { DbColumn } from './database'
 /**
  * Extract field names from an entity
  */
-export function getFieldNames<T>(entity: Entity<T>): Array<keyof T> {
+export function getFieldNames<T extends Record<string, any>>(entity: Entity<T>): Array<keyof T> {
   return Object.keys(entity.fields) as Array<keyof T>
 }
 
 /**
 * Get sortable fields from an entity
 */
-export function getSortableFields<T>(entity: Entity<T>): Array<keyof T> {
+export function getSortableFields<T extends Record<string, any>>(entity: Entity<T>): Array<keyof T> {
 return getFieldNames(entity).filter(name => {
 const field = entity.fields[name]
 return field.sortable === true
@@ -26,7 +26,7 @@ return field.sortable === true
 /**
 * Get filterable fields from an entity
 */
-export function getFilterableFields<T>(entity: Entity<T>): Array<keyof T> {
+export function getFilterableFields<T extends Record<string, any>>(entity: Entity<T>): Array<keyof T> {
 return getFieldNames(entity).filter(name => {
 const field = entity.fields[name]
 return field.filterable === true
@@ -36,7 +36,7 @@ return field.filterable === true
 /**
  * Get editable fields from an entity
  */
-export function getEditableFields<T>(entity: Entity<T>): Array<keyof T> {
+export function getEditableFields<T extends Record<string, any>>(entity: Entity<T>): Array<keyof T> {
   return getFieldNames(entity).filter(name => {
     const field = entity.fields[name]
     return field.editable !== false
@@ -46,7 +46,7 @@ export function getEditableFields<T>(entity: Entity<T>): Array<keyof T> {
 /**
  * Get required fields from an entity
  */
-export function getRequiredFields<T>(entity: Entity<T>): Array<keyof T> {
+export function getRequiredFields<T extends Record<string, any>>(entity: Entity<T>): Array<keyof T> {
   return getFieldNames(entity).filter(name => {
     const field = entity.fields[name]
     const dbColumn = entity.db.columns[name]
@@ -57,7 +57,7 @@ export function getRequiredFields<T>(entity: Entity<T>): Array<keyof T> {
 /**
 * Get optional fields from an entity
 */
-export function getOptionalFields<T>(entity: Entity<T>): Array<keyof T> {
+export function getOptionalFields<T extends Record<string, any>>(entity: Entity<T>): Array<keyof T> {
 return getFieldNames(entity).filter(name => {
 const field = entity.fields[name]
 const dbColumn = entity.db.columns[name]
@@ -87,7 +87,7 @@ return false
 /**
 * Generate default values for an entity
 */
-export function getDefaultValues<T>(entity: Entity<T>): Partial<T> {
+export function getDefaultValues<T extends Record<string, any>>(entity: Entity<T>): Partial<T> {
 const defaults: any = {}
 
 for (const fieldName of getFieldNames(entity)) {
@@ -113,7 +113,7 @@ defaults[fieldName] = typeof field.defaultValue === 'function'
 /**
  * Validate entity data against field schemas
  */
-export function validateEntity<T>(
+export function validateEntity<T extends Record<string, any>>(
   entity: Entity<T>,
   data: Partial<T>
 ): { valid: boolean; errors: Record<string, string> } {
@@ -145,7 +145,7 @@ export function validateEntity<T>(
 /**
  * Convert entity to TypeScript interface string
  */
-export function entityToTypeScript<T>(entity: Entity<T>): string {
+export function entityToTypeScript<T extends Record<string, any>>(entity: Entity<T>): string {
   const fieldLines = getFieldNames(entity).map(fieldName => {
     const field = entity.fields[fieldName]
     const optional = field.optional ? '?' : ''
@@ -159,7 +159,7 @@ export function entityToTypeScript<T>(entity: Entity<T>): string {
 /**
  * Convert entity to JSON schema
  */
-export function entityToJsonSchema<T>(entity: Entity<T>): any {
+export function entityToJsonSchema<T extends Record<string, any>>(entity: Entity<T>): any {
   const properties: Record<string, any> = {}
   const required: string[] = []
 
@@ -188,14 +188,14 @@ export function entityToJsonSchema<T>(entity: Entity<T>): any {
 /**
  * Get primary key field name(s)
  */
-export function getPrimaryKeyFields<T>(entity: Entity<T>): string[] {
+export function getPrimaryKeyFields<T extends Record<string, any>>(entity: Entity<T>): string[] {
   return entity.db.table.primaryKey
 }
 
 /**
 * Get unique fields
 */
-export function getUniqueFields<T>(entity: Entity<T>): Array<keyof T> {
+export function getUniqueFields<T extends Record<string, any>>(entity: Entity<T>): Array<keyof T> {
 return getFieldNames(entity).filter(name => {
 const dbColumn = entity.db.columns[name] as DbColumn
 // Check if column is marked as unique
@@ -219,7 +219,7 @@ if (entity.db.indexes) {
 /**
 * Get indexed fields
 */
-export function getIndexedFields<T>(entity: Entity<T>): Array<keyof T> {
+export function getIndexedFields<T extends Record<string, any>>(entity: Entity<T>): Array<keyof T> {
 return getFieldNames(entity).filter(name => {
 const dbColumn = entity.db.columns[name] as DbColumn
 // Check if column is marked as indexed
@@ -258,7 +258,7 @@ export function hasFieldPermission(
 /**
  * Get visible fields for a user role
  */
-export function getVisibleFields<T>(
+export function getVisibleFields<T extends Record<string, any>>(
   entity: Entity<T>,
   userRoles: string[],
   permission: 'read' | 'write' = 'read'
@@ -272,7 +272,7 @@ export function getVisibleFields<T>(
 /**
  * Sanitize entity data by removing fields user can't read
  */
-export function sanitizeEntity<T>(
+export function sanitizeEntity<T extends Record<string, any>>(
   entity: Entity<T>,
   data: T,
   userRoles: string[]

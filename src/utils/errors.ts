@@ -72,6 +72,42 @@ export function fromError(error: unknown, code: GeneratorErrorCode = GeneratorEr
 }
 
 /**
+ * Create a CLIError from any error
+ */
+export function fromCLIError(error: unknown, code: CLIErrorCode = CLIErrorCode.COMMAND_ERROR): CLIError {
+  if (error instanceof CLIError) {
+    return error
+  }
+
+  const message = error instanceof Error ? error.message : 'Unknown error'
+  const cause = error instanceof Error ? error : undefined
+
+  return new CLIError(code, message, undefined, cause)
+}
+
+/**
+ * Convert a GeneratorError to a CLIError
+ */
+export function toCLIError(error: GeneratorError, code?: CLIErrorCode): CLIError {
+  // Map GeneratorErrorCode to CLIErrorCode
+  const cliCode = code || (() => {
+    switch (error.code) {
+      case GeneratorErrorCode.INVALID_CONFIG:
+        return CLIErrorCode.CONFIG_ERROR
+      case GeneratorErrorCode.FILE_SYSTEM_ERROR:
+      case GeneratorErrorCode.SCHEMA_PARSE_ERROR:
+      case GeneratorErrorCode.CODE_GENERATION_ERROR:
+      case GeneratorErrorCode.VALIDATION_ERROR:
+        return CLIErrorCode.COMMAND_ERROR
+      default:
+        return CLIErrorCode.COMMAND_ERROR
+    }
+  })()
+
+  return new CLIError(cliCode, error.message, error.details, error.cause)
+}
+
+/**
  * Wrap a function that might throw in a Result
  */
 export function tryCatch<T>(

@@ -3,8 +3,8 @@
  * Error handling utilities and middleware
  */
 
-import type { ErrorBase, ErrorCode, ErrorInstance, RecoveryAction } from './types'
-import { getErrorDefinition, getErrorRecovery, isValidErrorCode } from './catalog'
+import type { ErrorBase, ErrorInstance, ErrorRecovery, RecoveryAction } from './types'
+import { ErrorCodes, getErrorDefinition, getErrorRecovery, isValidErrorCode, type ErrorCode } from './catalog'
 import { createFromError, createRuntimeError } from './factories'
 import { Result, ok, err } from 'neverthrow'
 
@@ -38,18 +38,18 @@ export function isErrorCode(error: unknown, code: ErrorCode): boolean {
  */
 export function isErrorCategory(error: unknown, category: string): boolean {
   if (!isStructuredError(error)) return false
-  const definition = getErrorDefinition(error.code as ErrorCode)
+  const definition = getErrorDefinition(error.code as any)
   return definition?.category === category
 }
 
 /**
  * Get error recovery suggestions
  */
-export function getRecoveryForError(error: ErrorBase): RecoveryAction[] {
+export function getRecoveryForError(error: ErrorBase): ErrorRecovery[] {
   if (!error.code || !isValidErrorCode(error.code)) {
     return []
   }
-  return getErrorRecovery(error.code)
+  return getErrorRecovery(error.code as any)
 }
 
 /**
@@ -71,7 +71,7 @@ export function formatErrorForLogging(error: ErrorBase): Record<string, any> {
  * Format error for API response
  */
 export function formatErrorForAPI(error: ErrorBase): Record<string, any> {
-  const definition = error.code ? getErrorDefinition(error.code as ErrorCode) : undefined
+  const definition = error.code ? getErrorDefinition(error.code as any) : undefined
 
   return {
     error: {
@@ -163,7 +163,7 @@ export async function toAsyncResult<T>(
 export function aggregateErrors(errors: ErrorBase[]): ErrorBase {
   if (errors.length === 0) {
     return createRuntimeError(
-      'RUNTIME_UNEXPECTED_ERROR' as ErrorCode,
+      ErrorCodes.RUNTIME_UNEXPECTED_ERROR,
       'No errors to aggregate'
     )
   }
@@ -183,7 +183,7 @@ export function aggregateErrors(errors: ErrorBase[]): ErrorBase {
   }
 
   return createRuntimeError(
-    'RUNTIME_UNEXPECTED_ERROR' as ErrorCode,
+    ErrorCodes.RUNTIME_UNEXPECTED_ERROR,
     `Multiple errors occurred: ${errors.length} total`,
     aggregatedContext,
     primaryError as Error
@@ -204,7 +204,7 @@ export function groupErrorsByCategory(errors: ErrorBase[]): Record<string, Error
       return
     }
 
-    const definition = getErrorDefinition(error.code as ErrorCode)
+    const definition = getErrorDefinition(error.code as any)
     const category = definition?.category || 'unknown'
 
     if (!groups[category]) groups[category] = []
@@ -226,7 +226,7 @@ export function filterErrorsBySeverity(
 
   return errors.filter(error => {
     if (!error.code || !isValidErrorCode(error.code)) return true // Include unknown errors
-    const definition = getErrorDefinition(error.code as ErrorCode)
+    const definition = getErrorDefinition(error.code as any)
     const level = severityLevels[definition?.severity || 'error']
     return level >= minLevel
   })
@@ -384,7 +384,7 @@ export function getHttpStatusCode(error: ErrorBase): number {
     return 500 // Internal Server Error
   }
 
-  const definition = getErrorDefinition(error.code as ErrorCode)
+  const definition = getErrorDefinition(error.code as any)
 
   // Map categories to HTTP status codes
   switch (definition?.category) {

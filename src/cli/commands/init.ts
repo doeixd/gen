@@ -11,7 +11,7 @@ import fs from 'fs'
 // Import utilities
 import { logger } from '../../utils/logger.js'
 import { ensureDirectory, writeFile } from '../../utils/file-system.js'
-import { CLIError, fromError } from '../../utils/errors.js'
+import { CLIError, fromCLIError } from '../../utils/errors.js'
 
 export function createInitCommand(): Command {
   const command = new Command('init')
@@ -90,9 +90,7 @@ export function createInitCommand(): Command {
         logger.subsection('Installing dependencies...')
         const installResult = await installDependencies(template)
         if (installResult.isErr()) {
-          logger.warn('Failed to install dependencies automatically', {
-            suggestion: 'Run "npm install" manually'
-          })
+          logger.warn('Failed to install dependencies automatically: run "npm install" manually')
         } else {
           logger.success('Dependencies installed')
         }
@@ -127,7 +125,7 @@ async function promptForTemplate(): Promise<string> {
 }
 
 // Setup project structure
-async function setupProject(template: string, options: any): Promise<Result<void, CLIError>> {
+async function setupProject(template: string, options: any): Promise<Result<void, any>> {
   try {
     const dirs = [
       'src',
@@ -167,12 +165,12 @@ async function setupProject(template: string, options: any): Promise<Result<void
 
     return ok(undefined)
   } catch (error) {
-    return err(fromError(error))
+    return err(fromCLIError(error))
   }
 }
 
 // Create package.json
-async function createPackageJson(projectName: string, template: string, options: any): Promise<Result<void, CLIError>> {
+async function createPackageJson(projectName: string, template: string, options: any): Promise<Result<void, any>> {
   try {
     const packageJson: any = {
       name: projectName,
@@ -239,12 +237,12 @@ async function createPackageJson(projectName: string, template: string, options:
 
     return ok(undefined)
   } catch (error) {
-    return err(fromError(error))
+    return err(fromCLIError(error))
   }
 }
 
 // Create configuration files
-async function createConfigFiles(template: string, options: any): Promise<Result<void, CLIError>> {
+async function createConfigFiles(template: string, options: any): Promise<Result<void, any>> {
   try {
     // Create .genrc.json
     const genConfig = {
@@ -338,12 +336,12 @@ export default {
 
     return ok(undefined)
   } catch (error) {
-    return err(fromError(error))
+    return err(fromCLIError(error))
   }
 }
 
 // Create initial schema
-async function createInitialSchema(template: string): Promise<Result<void, CLIError>> {
+async function createInitialSchema(template: string): Promise<Result<void, any>> {
   try {
     let schemaContent = ''
 
@@ -468,12 +466,12 @@ export const entities = [userEntity]
 
     return ok(undefined)
   } catch (error) {
-    return err(fromError(error))
+    return err(fromCLIError(error))
   }
 }
 
 // Install dependencies
-async function installDependencies(template: string): Promise<Result<void, CLIError>> {
+async function installDependencies(template: string): Promise<Result<void, any>> {
   try {
     const { execSync } = await import('child_process')
 
@@ -482,6 +480,6 @@ async function installDependencies(template: string): Promise<Result<void, CLIEr
 
     return ok(undefined)
   } catch (error) {
-    return err(fromError(error))
+    return err(fromCLIError(error))
   }
 }

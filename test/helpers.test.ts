@@ -6,6 +6,9 @@ import {
   createFieldMapping,
   addTableOverride,
   addFieldPattern,
+  createEntityObject,
+  createCrudApiRoutes,
+  permissionPresets,
   defaultTypeMappings,
   fieldNamePatterns,
   tableFieldOverrides,
@@ -470,6 +473,43 @@ describe('Helpers', () => {
       configs.forEach((config) => {
         expect(config.inputComponent).toBeTruthy();
       });
+    });
+  });
+
+  describe('entity object helpers', () => {
+    it('should create an entity from compact field definition', () => {
+      const entity = createEntityObject({
+        id: 'task',
+        fields: {
+          id: { type: 'id' },
+          title: { type: 'string' },
+          done: { type: 'boolean' },
+          ownerId: { type: 'string', indexed: true },
+        },
+        includeTimestamps: true,
+      });
+
+      expect(entity.id).toBe('task');
+      expect(entity.db.table.name).toBe('tasks');
+      expect(entity.db.columns.title).toBeDefined();
+      expect(entity.db.columns.createdAt).toBeDefined();
+      expect(entity.fields.done).toBeDefined();
+    });
+
+    it('should create standard CRUD route map', () => {
+      const routes = createCrudApiRoutes('/api/tasks') as any;
+      expect(routes.basePath).toBe('/api/tasks');
+      expect(routes.endpoints?.list?.method).toBe('GET');
+      expect(routes.endpoints?.create?.method).toBe('POST');
+    });
+
+    it('should provide owner/admin permission presets', () => {
+      const ownerAdmin = permissionPresets.ownerAdmin('authorId') as any;
+      const adminOnly = permissionPresets.adminOnly() as any;
+
+      expect(ownerAdmin.ownership.required).toBe(true);
+      expect(ownerAdmin.ownership.ownerField).toBe('authorId');
+      expect(adminOnly.role.admin.delete).toBe(true);
     });
   });
 });

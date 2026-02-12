@@ -111,12 +111,20 @@ export interface EntityPermissions {
   // Ownership permissions (simplified for tests)
   ownership?: {
     ownerField: string
+    required?: boolean
+    allowTransfer?: boolean
+    transferRequiresApproval?: boolean
+    transferApprovers?: string[]
     allowOwner?: string[]
   }
 
   // Organization permissions (simplified for tests)
   organization?: {
     field: string
+    required?: boolean
+    orgField?: string
+    allowCrossOrg?: boolean
+    crossOrgRoles?: string[]
     allowSameOrg?: boolean
   }
 

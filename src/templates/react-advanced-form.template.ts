@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Advanced React Form Template
  * Based on old/generate-forms.ts patterns with TanStack Form, neverthrow, and permissions

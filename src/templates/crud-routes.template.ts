@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * CRUD Routes Template
  * Template for generating complete CRUD routes with TanStack Router

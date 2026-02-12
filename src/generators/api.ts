@@ -4,7 +4,6 @@
  */
 
 import type { Entity } from '../entity'
-import type { PermissionConfig } from '../permissions'
 import { extractStandardSchema } from '../validators'
 
 /**
@@ -38,7 +37,7 @@ export class APIGenerator {
   /**
    * Generate all API code for an entity
    */
-  static generate<T>(entity: Entity<T>, options: APIGeneratorOptions = {
+  static generate<T extends Record<string, any>>(entity: Entity<T>, options: APIGeneratorOptions = {
     framework: 'express',
     includeValidation: true,
     includePermissions: true,
@@ -69,14 +68,14 @@ export class APIGenerator {
   /**
    * Generate API code for a specific framework
    */
-  static generateForFramework<T>(entity: Entity<T>, framework: 'express' | 'fastify' | 'hono' | 'koa'): GeneratedAPICode {
+  static generateForFramework<T extends Record<string, any>>(entity: Entity<T>, framework: 'express' | 'fastify' | 'hono' | 'koa'): GeneratedAPICode {
     return this.generate(entity, { framework, includeValidation: true, includePermissions: true, includeOpenAPI: true, includeTypes: true })
   }
 
   /**
    * Generate routes for different frameworks
    */
-  private static generateRoutes<T>(entity: Entity<T>, options: APIGeneratorOptions, basePath: string): string {
+  private static generateRoutes<T extends Record<string, any>>(entity: Entity<T>, options: APIGeneratorOptions, basePath: string): string {
     const entityName = entity.name.singular
     const pluralName = entity.name.plural
 
@@ -97,7 +96,7 @@ export class APIGenerator {
   /**
    * Generate Express routes
    */
-  private static generateExpressRoutes<T>(entity: Entity<T>, options: APIGeneratorOptions, basePath: string): string {
+  private static generateExpressRoutes<T extends Record<string, any>>(entity: Entity<T>, options: APIGeneratorOptions, basePath: string): string {
     const entityName = entity.name.singular
     const pluralName = entity.name.plural
 
@@ -149,7 +148,7 @@ export default router`
   /**
    * Generate Fastify routes
    */
-  private static generateFastifyRoutes<T>(entity: Entity<T>, options: APIGeneratorOptions, basePath: string): string {
+  private static generateFastifyRoutes<T extends Record<string, any>>(entity: Entity<T>, options: APIGeneratorOptions, basePath: string): string {
     const entityName = entity.name.singular
     const pluralName = entity.name.plural
 
@@ -179,7 +178,7 @@ export default ${pluralName}Routes`
   /**
    * Generate Hono routes
    */
-  private static generateHonoRoutes<T>(entity: Entity<T>, options: APIGeneratorOptions, basePath: string): string {
+  private static generateHonoRoutes<T extends Record<string, any>>(entity: Entity<T>, options: APIGeneratorOptions, basePath: string): string {
     const entityName = entity.name.singular
     const pluralName = entity.name.plural
 
@@ -209,7 +208,7 @@ export default router`
   /**
    * Generate Koa routes
    */
-  private static generateKoaRoutes<T>(entity: Entity<T>, options: APIGeneratorOptions, basePath: string): string {
+  private static generateKoaRoutes<T extends Record<string, any>>(entity: Entity<T>, options: APIGeneratorOptions, basePath: string): string {
     const entityName = entity.name.singular
     const pluralName = entity.name.plural
 
@@ -239,7 +238,7 @@ export default router`
   /**
    * Generate controllers
    */
-  private static generateControllers<T>(entity: Entity<T>, options: APIGeneratorOptions): string {
+  private static generateControllers<T extends Record<string, any>>(entity: Entity<T>, options: APIGeneratorOptions): string {
     const entityName = entity.name.singular
     const pluralName = entity.name.plural
 
@@ -399,7 +398,7 @@ export class ${pluralName}Controller {
   /**
    * Generate middleware for permissions and validation
    */
-  private static generateMiddleware<T>(entity: Entity<T>, options: APIGeneratorOptions): string {
+  private static generateMiddleware<T extends Record<string, any>>(entity: Entity<T>, options: APIGeneratorOptions): string {
     return `
 // Permission middleware
 export const permissionMiddleware = (entity: string, action: string) => {
@@ -414,12 +413,13 @@ export const permissionMiddleware = (entity: string, action: string) => {
   /**
    * Generate validators using Zod schemas
    */
-  private static generateValidators<T>(entity: Entity<T>): string {
+  private static generateValidators<T extends Record<string, any>>(entity: Entity<T>): string {
     const entityName = entity.name.singular
     const pluralName = entity.name.plural
 
     // Generate field validators
-    const fieldValidators = Object.entries(entity.fields).map(([fieldName, field]) => {
+    const fields = entity.fields as Record<string, any>
+    const fieldValidators = Object.entries(fields).map(([fieldName, field]) => {
       const schema = extractStandardSchema(field)
       if (!schema) return `  ${fieldName}: z.any(),`
 
@@ -452,32 +452,33 @@ export const ${entityName}IdParamSchema = z.object({
   /**
    * Generate OpenAPI specification
    */
-  private static generateOpenAPI<T>(entity: Entity<T>, basePath: string): string {
+  private static generateOpenAPI<T extends Record<string, any>>(entity: Entity<T>, basePath: string): string {
     return '// TODO: Generate OpenAPI specification'
   }
 
   /**
    * Generate TypeScript types
    */
-  private static generateTypes<T>(entity: Entity<T>): string {
+  private static generateTypes<T extends Record<string, any>>(entity: Entity<T>): string {
     const entityName = entity.name.singular
     const pluralName = entity.name.plural
 
     // Generate field types
-    const fieldTypes = Object.entries(entity.fields).map(([fieldName, field]) => {
+    const fields = entity.fields as Record<string, any>
+    const fieldTypes = Object.entries(fields).map(([fieldName, field]) => {
       const tsType = (field as any).jsType || 'string'
       const optional = field.optional ? '?' : ''
       return `  ${fieldName}${optional}: ${tsType}`
     }).join('\n')
 
-    const createFields = Object.entries(entity.fields)
+    const createFields = Object.entries(fields)
       .filter(([_, field]) => !field.optional && field.name !== 'id' && field.name !== 'createdAt' && field.name !== 'updatedAt')
       .map(([fieldName, field]) => {
         const tsType = (field as any).jsType || 'string'
         return `  ${fieldName}: ${tsType}`
       }).join('\n')
 
-    const updateFields = Object.entries(entity.fields)
+    const updateFields = Object.entries(fields)
       .filter(([_, field]) => field.editable !== false && field.name !== 'id' && field.name !== 'createdAt')
       .map(([fieldName, field]) => {
         const tsType = (field as any).jsType || 'string'

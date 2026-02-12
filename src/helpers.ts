@@ -6,49 +6,51 @@
 import type { Entity, FieldMapping, NameConfig, RelationshipMapping, TableConfig } from './entity'
 import { validators } from './validators'
 import { MutatorFactory } from './mutations'
+import { component } from './components'
+import { dbTypes, type DbColumn } from './database'
 
 /**
  * Default type mappings - maps TypeScript types to UI components
  */
 export const defaultTypeMappings: Record<string, Partial<FieldMapping<any>>> = {
   string: {
-    inputComponent: 'TextField' as any,
-    displayComponent: 'Text' as any,
-    standardSchema: validators.string,
+    inputComponent: component('TextField'),
+    displayComponent: component('Text'),
+    standardSchema: validators.string(),
     defaultValue: '',
     jsType: 'string',
   },
   number: {
-    inputComponent: 'NumberField' as any,
-    displayComponent: 'Number' as any,
+    inputComponent: component('NumberField'),
+    displayComponent: component('Number'),
     standardSchema: validators.number,
     defaultValue: 0,
     jsType: 'number',
   },
   boolean: {
-    inputComponent: 'Checkbox' as any,
-    displayComponent: 'Badge' as any,
+    inputComponent: component('Checkbox'),
+    displayComponent: component('Badge'),
     standardSchema: validators.boolean,
     defaultValue: false,
     jsType: 'boolean',
   },
   id: {
-    inputComponent: 'TextField' as any,
-    displayComponent: 'Link' as any,
-    standardSchema: validators.string,
+    inputComponent: component('TextField'),
+    displayComponent: component('Link'),
+    standardSchema: validators.string(),
     defaultValue: '',
     jsType: 'string',
   },
   date: {
-    inputComponent: 'TextField' as any,
-    displayComponent: 'DateTime' as any,
-    standardSchema: validators.string, // Could be a date validator
+    inputComponent: component('TextField'),
+    displayComponent: component('DateTime'),
+    standardSchema: validators.string(), // Could be a date validator
     defaultValue: '',
     jsType: 'string',
   },
   array: {
-    inputComponent: 'TextField' as any,
-    displayComponent: 'List' as any,
+    inputComponent: component('TextField'),
+    displayComponent: component('List'),
     standardSchema: validators.stringArray,
     defaultValue: [],
     jsType: 'array',
@@ -61,110 +63,110 @@ export const defaultTypeMappings: Record<string, Partial<FieldMapping<any>>> = {
 export const fieldNamePatterns: Record<string, Partial<FieldMapping<any>>> = {
   // Email fields
   email: {
-    inputComponent: 'TextField' as any,
-    displayComponent: 'Email' as any,
+    inputComponent: component('TextField'),
+    displayComponent: component('Email'),
     standardSchema: validators.email,
   },
 
   // URL fields
   url: {
-    inputComponent: 'TextField' as any,
-    displayComponent: 'Link' as any,
+    inputComponent: component('TextField'),
+    displayComponent: component('Link'),
     standardSchema: validators.url,
   },
   website: {
-    inputComponent: 'TextField' as any,
-    displayComponent: 'Link' as any,
+    inputComponent: component('TextField'),
+    displayComponent: component('Link'),
     standardSchema: validators.optional(validators.url),
   },
 
   // Description/Content fields
   description: {
-    inputComponent: 'TextArea' as any,
-    displayComponent: 'Text' as any,
-    standardSchema: validators.string,
+    inputComponent: component('TextArea'),
+    displayComponent: component('Text'),
+    standardSchema: validators.string(),
   },
   content: {
-    inputComponent: 'TextArea' as any,
-    displayComponent: 'Text' as any,
-    standardSchema: validators.string,
+    inputComponent: component('TextArea'),
+    displayComponent: component('Text'),
+    standardSchema: validators.string(),
   },
   bio: {
-    inputComponent: 'TextArea' as any,
-    displayComponent: 'Text' as any,
-    standardSchema: validators.optional(validators.string),
+    inputComponent: component('TextArea'),
+    displayComponent: component('Text'),
+    standardSchema: validators.optional(validators.string()),
   },
 
   // Image fields
   image: {
-    inputComponent: 'TextField' as any,
-    displayComponent: 'Image' as any,
-    standardSchema: validators.string,
+    inputComponent: component('TextField'),
+    displayComponent: component('Image'),
+    standardSchema: validators.string(),
   },
   imageId: {
-    inputComponent: 'TextField' as any,
-    displayComponent: 'Image' as any,
-    standardSchema: validators.string,
+    inputComponent: component('TextField'),
+    displayComponent: component('Image'),
+    standardSchema: validators.string(),
   },
   imageUrl: {
-    inputComponent: 'TextField' as any,
-    displayComponent: 'Image' as any,
+    inputComponent: component('TextField'),
+    displayComponent: component('Image'),
     standardSchema: validators.url,
   },
   avatar: {
-    inputComponent: 'TextField' as any,
-    displayComponent: 'Avatar' as any,
-    standardSchema: validators.optional(validators.string),
+    inputComponent: component('TextField'),
+    displayComponent: component('Avatar'),
+    standardSchema: validators.optional(validators.string()),
   },
 
   // Date/Time fields
   createdAt: {
-    displayComponent: 'DateTime' as any,
+    displayComponent: component('DateTime'),
   },
   updatedAt: {
-    displayComponent: 'DateTime' as any,
+    displayComponent: component('DateTime'),
   },
 
   // Price/Currency fields
   price: {
-    inputComponent: 'NumberField' as any,
-    displayComponent: 'Currency' as any,
+    inputComponent: component('NumberField'),
+    displayComponent: component('Currency'),
     standardSchema: validators.price,
   },
   amount: {
-    inputComponent: 'NumberField' as any,
-    displayComponent: 'Currency' as any,
+    inputComponent: component('NumberField'),
+    displayComponent: component('Currency'),
     standardSchema: validators.currency,
   },
 
   // Status fields
   status: {
-    inputComponent: 'Select' as any,
-    displayComponent: 'Badge' as any,
-    standardSchema: validators.string,
+    inputComponent: component('Select'),
+    displayComponent: component('Badge'),
+    standardSchema: validators.string(),
   },
 
   // Boolean flags
   completed: {
-    inputComponent: 'Checkbox' as any,
-    displayComponent: 'Badge' as any,
+    inputComponent: component('Checkbox'),
+    displayComponent: component('Badge'),
     standardSchema: validators.boolean,
   },
   isActive: {
-    inputComponent: 'Checkbox' as any,
-    displayComponent: 'Badge' as any,
+    inputComponent: component('Checkbox'),
+    displayComponent: component('Badge'),
     standardSchema: validators.boolean,
   },
   enabled: {
-    inputComponent: 'Checkbox' as any,
-    displayComponent: 'Badge' as any,
+    inputComponent: component('Checkbox'),
+    displayComponent: component('Badge'),
     standardSchema: validators.boolean,
   },
 
   // Phone
   phone: {
-    inputComponent: 'TextField' as any,
-    displayComponent: 'Text' as any,
+    inputComponent: component('TextField'),
+    displayComponent: component('Text'),
     standardSchema: validators.phone,
   },
 }
@@ -181,7 +183,7 @@ export const tableFieldOverrides: TableFieldOverrides = {
       permissions: { roles: { read: ['user', 'admin'], write: ['admin', 'manager'] } },
     },
     price: {
-      displayComponent: 'Currency' as any,
+      displayComponent: component('Currency'),
       standardSchema: validators.price,
       permissions: { roles: { read: ['user', 'admin'], write: ['admin'] } },
     },
@@ -191,7 +193,7 @@ export const tableFieldOverrides: TableFieldOverrides = {
   },
   todos: {
     text: {
-      inputComponent: 'TextArea' as any,
+      inputComponent: component('TextArea'),
       standardSchema: validators.stringMin(1, 'Todo text is required'),
       permissions: {
         roles: { read: ['user', 'admin'], write: ['user', 'admin'] },
@@ -199,7 +201,7 @@ export const tableFieldOverrides: TableFieldOverrides = {
       },
     },
     completed: {
-      displayComponent: 'CompletedBadge' as any,
+      displayComponent: component('CompletedBadge'),
       permissions: {
         roles: { read: ['user', 'admin'], write: ['user', 'admin'] },
         ownership: { required: true, ownerField: 'userId' },
@@ -226,7 +228,7 @@ const _excludeFromList: Record<string, string[]> = {}
 export const tableDisplayConfig: Record<string, TableConfig> = {
   products: {
     tableName: 'products',
-    tableComponent: 'Table' as any,
+    tableComponent: component('Table'),
     layout: 'list',
     columns: ['title', 'imageId', 'price'] as any,
     sortable: ['title', 'price'],
@@ -241,7 +243,7 @@ export const tableDisplayConfig: Record<string, TableConfig> = {
   },
   todos: {
     tableName: 'todos',
-    tableComponent: 'Table' as any,
+    tableComponent: component('Table'),
     layout: 'list',
     columns: ['text', 'completed'] as any,
     sortable: ['text', 'completed'],
@@ -334,7 +336,7 @@ export function createEntity<T extends Record<string, any>>(
 /**
  * Create a relationship with defaults
  */
-export function createRelationship<TLocal, TForeign = any>(
+export function createRelationship<TLocal extends Record<string, any>, TForeign extends Record<string, any> = Record<string, any>>(
   config: Omit<RelationshipMapping<TLocal, TForeign>, 'version'> & { version?: number }
 ): RelationshipMapping<TLocal, TForeign> {
   return {
@@ -421,7 +423,7 @@ function isExcludedFromList(tableName: string, fieldName: string): boolean {
  *   excludeFields: ['password']
  * })
  */
-export function entityToColumnDefs<T>(
+export function entityToColumnDefs<T extends Record<string, any>>(
   entity: Entity<T>,
   options: {
     includeActions?: boolean
@@ -458,16 +460,34 @@ export function entityToColumnDefs<T>(
     const fieldName = String(field)
     const displayComponent = fieldConfig.displayComponent
 
+    const getComponentName = (value: unknown): string | undefined => {
+      if (!value) return undefined
+      if (typeof value === 'object' && value !== null) {
+        if ('key' in (value as Record<string, unknown>) && typeof (value as Record<string, unknown>).key === 'string') {
+          return String((value as Record<string, unknown>).key)
+        }
+        if ('component' in (value as Record<string, unknown>)) {
+          const nested = (value as Record<string, unknown>).component
+          if (typeof nested === 'object' && nested !== null && 'key' in (nested as Record<string, unknown>)) {
+            return String((nested as Record<string, unknown>).key)
+          }
+        }
+      }
+      return undefined
+    }
+
+    const displayComponentName = getComponentName(displayComponent)
+
     // Map display component to cell renderer
     let cellRenderer = 'TextCell'
-    if (displayComponent === 'Number' as any) cellRenderer = 'NumberCell'
-    else if (displayComponent === 'Currency' as any) cellRenderer = 'CurrencyCell'
-    else if (displayComponent === 'DateTime' as any) cellRenderer = 'DateTimeCell'
-    else if (displayComponent === 'Badge' as any) cellRenderer = 'BadgeCell'
-    else if (displayComponent === 'Link' as any) cellRenderer = 'LinkCell'
-    else if (displayComponent === 'Email' as any) cellRenderer = 'EmailCell'
-    else if (displayComponent === 'Image' as any) cellRenderer = 'ImageCell'
-    else if (displayComponent === 'Avatar' as any) cellRenderer = 'AvatarCell'
+    if (displayComponentName === 'Number') cellRenderer = 'NumberCell'
+    else if (displayComponentName === 'Currency') cellRenderer = 'CurrencyCell'
+    else if (displayComponentName === 'DateTime') cellRenderer = 'DateTimeCell'
+    else if (displayComponentName === 'Badge') cellRenderer = 'BadgeCell'
+    else if (displayComponentName === 'Link') cellRenderer = 'LinkCell'
+    else if (displayComponentName === 'Email') cellRenderer = 'EmailCell'
+    else if (displayComponentName === 'Image') cellRenderer = 'ImageCell'
+    else if (displayComponentName === 'Avatar') cellRenderer = 'AvatarCell'
 
     // Determine if the field should be sortable and filterable
     const sortable = fieldConfig.sortable !== false
@@ -497,4 +517,134 @@ export function entityToColumnDefs<T>(
   }
 
   return `[\n${columnDefs.join(',\n')}\n]`
+}
+
+export type PrimitiveFieldType = 'string' | 'number' | 'boolean' | 'date' | 'id' | 'email' | 'url' | 'text'
+
+export interface SimpleFieldDefinition {
+  type: PrimitiveFieldType
+  optional?: boolean
+  unique?: boolean
+  indexed?: boolean
+  label?: string
+}
+
+function createDbColumnForType(def: SimpleFieldDefinition): DbColumn<any> {
+  switch (def.type) {
+    case 'id':
+      return { type: dbTypes.id(), unique: true }
+    case 'number':
+      return { type: dbTypes.number(), nullable: Boolean(def.optional), unique: Boolean(def.unique), indexed: Boolean(def.indexed) }
+    case 'boolean':
+      return { type: dbTypes.boolean(), nullable: Boolean(def.optional), indexed: Boolean(def.indexed) }
+    case 'date':
+      return { type: dbTypes.timestamp(), nullable: Boolean(def.optional), indexed: Boolean(def.indexed) }
+    case 'email':
+      return { type: dbTypes.string(255), nullable: Boolean(def.optional), unique: true, indexed: true }
+    case 'url':
+      return { type: dbTypes.string(2048), nullable: Boolean(def.optional), indexed: Boolean(def.indexed) }
+    case 'text':
+      return { type: dbTypes.text(), nullable: Boolean(def.optional), indexed: Boolean(def.indexed) }
+    case 'string':
+    default:
+      return { type: dbTypes.string(255), nullable: Boolean(def.optional), unique: Boolean(def.unique), indexed: Boolean(def.indexed) }
+  }
+}
+
+function createFieldMappingForType(def: SimpleFieldDefinition): FieldMapping<any> {
+  const baseType = def.type === 'email' || def.type === 'url' || def.type === 'text' ? 'string' : def.type
+  const mapping = resolveFieldConfig('default', def.label || 'field', baseType, Boolean(def.optional))
+  if (def.label) {
+    ;(mapping as any).label = def.label
+  }
+
+  if (def.type === 'email') mapping.standardSchema = def.optional ? validators.optional(validators.email) : validators.email
+  if (def.type === 'url') mapping.standardSchema = def.optional ? validators.optional(validators.url) : validators.url
+  if (def.type === 'text') mapping.inputComponent = component('TextArea')
+
+  return mapping
+}
+
+export interface CreateEntityObjectOptions {
+  id: string
+  name?: Partial<NameConfig>
+  tableName?: string
+  fields: Record<string, SimpleFieldDefinition>
+  includeTimestamps?: boolean
+}
+
+/**
+ * Build a full Entity object from a compact field-object definition.
+ */
+export function createEntityObject<T extends Record<string, any> = Record<string, any>>(
+  options: CreateEntityObjectOptions
+): Entity<T> {
+  const name = {
+    singular: options.name?.singular || options.id,
+    plural: options.name?.plural || `${options.id}s`,
+    display: options.name?.display || options.name?.singular || options.id,
+  }
+
+  const dbColumns: Record<string, DbColumn<any>> = {}
+  const fieldMappings: Record<string, FieldMapping<any>> = {}
+
+  for (const [fieldName, fieldDef] of Object.entries(options.fields)) {
+    dbColumns[fieldName] = createDbColumnForType(fieldDef)
+    fieldMappings[fieldName] = createFieldMappingForType({ ...fieldDef, label: fieldDef.label || fieldName })
+  }
+
+  if (options.includeTimestamps) {
+    dbColumns.createdAt = { type: dbTypes.timestamp() }
+    dbColumns.updatedAt = { type: dbTypes.timestamp(), nullable: true }
+    fieldMappings.createdAt = resolveFieldConfig('default', 'createdAt', 'date', false)
+    fieldMappings.updatedAt = resolveFieldConfig('default', 'updatedAt', 'date', true)
+  }
+
+  const fieldNames = Object.keys(options.fields)
+  const primaryKey = fieldNames.includes('id') ? ['id'] : [fieldNames[0]]
+
+  return createEntity<T>({
+    id: options.id,
+    name,
+    db: {
+      table: { name: options.tableName || name.plural.toLowerCase(), primaryKey },
+      columns: dbColumns,
+    } as any,
+    fields: fieldMappings as any,
+  })
+}
+
+export function createCrudApiRoutes(basePath: string): NonNullable<Entity<any>['routes']>['api'] {
+  return {
+    basePath,
+    endpoints: {
+      list: { method: 'GET', path: '/' },
+      get: { method: 'GET', path: '/:id' },
+      create: { method: 'POST', path: '/' },
+      update: { method: 'PUT', path: '/:id' },
+      delete: { method: 'DELETE', path: '/:id' },
+    },
+  } as any
+}
+
+export const permissionPresets = {
+  ownerAdmin(ownerField = 'userId') {
+    return {
+      role: {
+        user: { read: true, create: true, update: true },
+        admin: { read: true, create: true, update: true, delete: true },
+      },
+      ownership: {
+        required: true,
+        ownerField,
+      },
+    }
+  },
+  adminOnly() {
+    return {
+      role: {
+        admin: { read: true, create: true, update: true, delete: true },
+      },
+    }
+  },
 }

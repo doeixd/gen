@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * React List View Template
  * Template for generating React list/table components

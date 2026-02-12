@@ -7,18 +7,18 @@ import { Command } from 'commander'
 import { Result, ok, err } from 'neverthrow'
 import path from 'path'
 import fs from 'fs'
+import { createInterface } from 'readline/promises'
+import { stdin as input, stdout as output } from 'process'
 
 // Import existing generation logic
 import {
-  getConfig,
   loadConfigFile,
   loadGeneratorScript,
-  loadArgFiles,
   type GeneratorConfig,
   type GeneratorArgs,
 } from '../../utils/config.js'
 import { logger } from '../../utils/logger.js'
-import { GeneratorError, fromError } from '../../utils/errors.js'
+import { GeneratorError, GeneratorErrorCode, fromError } from '../../utils/errors.js'
 import { readSchemaFile } from '../../utils/schema-parser.js'
 
 // Import generators
@@ -31,13 +31,16 @@ import { generateAPI } from '../generate.js'
 import { generateFrontend } from '../generate.js'
 import { generateTests } from '../generate.js'
 import { generateDocumentation } from '../generate.js'
+import { generateConvexAuth } from '../generate.js'
+import { generateSpacetimeAuth } from '../generate.js'
+import { generateZeroAuth } from '../generate.js'
 
 export function createGenerateCommand(): Command {
   const command = new Command('generate')
     .alias('gen')
     .alias('g')
     .description('Generate code from entity definitions')
-    .argument('[targets...]', 'generation targets (database, api, frontend, crud, convex, forms, tables, rails, nextjs, openapi, tests, docs, deployment)')
+    .argument('[targets...]', 'generation targets (database, api, frontend, crud, convex, convex-auth, spacetime-auth, zero-auth, forms, tables, rails, nextjs, openapi, tests, docs, deployment)')
     .option('-c, --config <path>', 'path to config file')
     .option('-s, --schema <path>', 'path to schema file')
     .option('-o, --output <path>', 'output directory')
@@ -56,13 +59,35 @@ export function createGenerateCommand(): Command {
     .option('--quiet', 'suppress non-error output')
     .option('--watch', 'watch for changes and regenerate')
     .option('--incremental', 'only generate changed entities')
+    .option('--convex-auth-mode <mode>', 'convex auth mode (scaffold|patch)', 'scaffold')
+    .option('--spacetime-auth-mode <mode>', 'spacetime auth mode (scaffold|patch)', 'scaffold')
+    .option('--zero-auth-mode <mode>', 'zero auth mode (scaffold|patch)', 'scaffold')
+    .option('--convex-auth-profile <profile>', 'convex auth profile (minimal|prod-ready|existing-app-merge)', 'prod-ready')
+    .option('--spacetime-auth-profile <profile>', 'spacetime auth profile (minimal|prod-ready|existing-app-merge)', 'prod-ready')
+    .option('--zero-auth-profile <profile>', 'zero auth profile (minimal|prod-ready|existing-app-merge)', 'prod-ready')
     .option('--tables <list>', 'comma-separated list of tables to generate')
     .option('--exclude <list>', 'comma-separated list of tables to exclude')
     .option('--preset <name>', 'use a predefined configuration preset')
+    .option('--interactive', 'run interactive generation wizard')
+    .option('--plan', 'print generation plan and exit')
+    .option('--json', 'print generation plan as JSON and exit')
+    .option('--explain', 'explain what each target generates')
 
   command.action(async (targets: string[], options: any) => {
     try {
       logger.section('🚀 Code Generation')
+
+      if (options.interactive) {
+        const wizardResult = await runGenerationWizard(targets, options)
+        if (wizardResult.isErr()) {
+          logger.error('Interactive wizard failed', wizardResult.error.code, {
+            error: wizardResult.error.message,
+          })
+          process.exit(1)
+        }
+        targets = wizardResult.value.targets
+        options = wizardResult.value.options
+      }
 
       // Handle presets
       if (options.preset) {
@@ -147,7 +172,7 @@ export function createGenerateCommand(): Command {
 
       // Determine targets
       const allTargets = [
-        'database', 'api', 'frontend', 'crud', 'convex', 'forms', 'tables', 'rails', 'nextjs', 'openapi', 'tests', 'docs', 'deployment'
+        'database', 'api', 'frontend', 'crud', 'convex', 'convex-auth', 'spacetime-auth', 'zero-auth', 'forms', 'tables', 'rails', 'nextjs', 'openapi', 'tests', 'docs', 'deployment'
       ]
       const requestedTargets = targets.length > 0 ? targets : config.targets
 
@@ -158,6 +183,48 @@ export function createGenerateCommand(): Command {
           validTargets: allTargets.join(', ')
         })
         process.exit(1)
+      }
+
+      const metadata = getTargetMetadata()
+      const plan = {
+        targets: requestedTargets,
+        entityCount: filteredEntities.length,
+        entities: filteredEntities.map((e: any) => e.id),
+        dryRun: config.dryRun,
+        modes: {
+          convexAuthMode: config.integrations?.convexAuthMode,
+          spacetimeAuthMode: config.integrations?.spacetimeAuthMode,
+          zeroAuthMode: config.integrations?.zeroAuthMode,
+        },
+        profiles: {
+          convexAuthProfile: config.integrations?.convexAuthProfile,
+          spacetimeAuthProfile: config.integrations?.spacetimeAuthProfile,
+          zeroAuthProfile: config.integrations?.zeroAuthProfile,
+        },
+        details: requestedTargets.map((t: string) => ({ target: t, ...(metadata[t] || { summary: 'No summary available' }) })),
+      }
+
+      if (options.explain) {
+        logger.subsection('Target Explanation')
+        for (const detail of plan.details) {
+          logger.info(`- ${detail.target}: ${detail.summary}`)
+        }
+      }
+
+      if (options.json) {
+        console.log(JSON.stringify(plan, null, 2))
+        return
+      }
+
+      if (options.plan) {
+        logger.subsection('Generation Plan')
+        logger.info(`Targets: ${plan.targets.join(', ')}`)
+        logger.info(`Entities: ${plan.entityCount} (${plan.entities.join(', ')})`)
+        logger.info(`Dry run: ${plan.dryRun ? 'yes' : 'no'}`)
+        for (const detail of plan.details) {
+          logger.info(`- ${detail.target}: ${detail.summary}`)
+        }
+        return
       }
 
       // Create generator args
@@ -187,6 +254,15 @@ export function createGenerateCommand(): Command {
             break
           case 'convex':
             generationPromises.push(generateConvex(generatorArgs))
+            break
+          case 'convex-auth':
+            generationPromises.push(generateConvexAuth(generatorArgs))
+            break
+          case 'spacetime-auth':
+            generationPromises.push(generateSpacetimeAuth(generatorArgs))
+            break
+          case 'zero-auth':
+            generationPromises.push(generateZeroAuth(generatorArgs))
             break
           case 'forms':
             generationPromises.push(generateForms(generatorArgs))
@@ -233,6 +309,69 @@ export function createGenerateCommand(): Command {
   return command
 }
 
+async function runGenerationWizard(
+  existingTargets: string[],
+  existingOptions: any
+): Promise<Result<{ targets: string[]; options: any }, GeneratorError>> {
+  try {
+    const rl = createInterface({ input, output })
+    const allTargets = Object.keys(getTargetMetadata())
+
+    const targetAnswer = await rl.question(
+      `Targets (comma-separated, blank for defaults: ${allTargets.join(', ')}): `
+    )
+    const selectedTargets = targetAnswer.trim()
+      ? targetAnswer.split(',').map((x) => x.trim()).filter(Boolean)
+      : (existingTargets.length > 0 ? existingTargets : ['database', 'api', 'frontend'])
+
+    const profileAnswer = await rl.question('Auth profile [minimal|prod-ready|existing-app-merge] (default prod-ready): ')
+    const profile = profileAnswer.trim() || 'prod-ready'
+
+    const dryRunAnswer = await rl.question('Dry run? [y/N]: ')
+    const dryRun = /^y(es)?$/i.test(dryRunAnswer.trim())
+
+    const explainAnswer = await rl.question('Explain targets before run? [y/N]: ')
+    const explain = /^y(es)?$/i.test(explainAnswer.trim())
+
+    rl.close()
+
+    return ok({
+      targets: selectedTargets,
+      options: {
+        ...existingOptions,
+        dryRun,
+        explain,
+        convexAuthProfile: profile,
+        spacetimeAuthProfile: profile,
+        zeroAuthProfile: profile,
+      },
+    })
+  } catch (error) {
+    return err(fromError(error))
+  }
+}
+
+function getTargetMetadata(): Record<string, { summary: string }> {
+  return {
+    database: { summary: 'Generate database schema code for configured DB targets.' },
+    api: { summary: 'Generate API routes/controllers/validators for entities.' },
+    frontend: { summary: 'Generate frontend forms/lists/detail components.' },
+    crud: { summary: 'Generate end-to-end CRUD scaffolding.' },
+    convex: { summary: 'Generate Convex-oriented backend code.' },
+    'convex-auth': { summary: 'Generate TanStack Start + Convex + Better Auth integration and entity-driven Convex CRUD.' },
+    'spacetime-auth': { summary: 'Generate TanStack Start + SpacetimeDB + Better Auth integration and entity-driven reducers.' },
+    'zero-auth': { summary: 'Generate TanStack Start + Zero + Better Auth integration with entity-driven schema/queries/mutators.' },
+    forms: { summary: 'Generate form components and form schemas.' },
+    tables: { summary: 'Generate table/list components and columns.' },
+    rails: { summary: 'Generate Rails-style route scaffolding.' },
+    nextjs: { summary: 'Generate Next.js API scaffolding.' },
+    openapi: { summary: 'Generate OpenAPI specification output.' },
+    tests: { summary: 'Generate test scaffolding for entities/features.' },
+    docs: { summary: 'Generate documentation artifacts.' },
+    deployment: { summary: 'Generate deployment/configuration artifacts.' },
+  }
+}
+
 // Load configuration preset
 async function loadPreset(presetName: string): Promise<Result<any, GeneratorError>> {
   try {
@@ -248,6 +387,19 @@ async function loadPreset(presetName: string): Promise<Result<any, GeneratorErro
         targets: ['database', 'convex', 'crud', 'forms'],
         framework: 'react',
         dbTarget: 'convex'
+      },
+      'tanstack-convex-auth': {
+        targets: ['convex-auth'],
+        framework: 'react',
+        dbTarget: 'convex'
+      },
+      'tanstack-spacetime-auth': {
+        targets: ['spacetime-auth'],
+        framework: 'react'
+      },
+      'tanstack-zero-auth': {
+        targets: ['zero-auth'],
+        framework: 'react'
       },
       'express-api': {
         targets: ['database', 'api'],
@@ -266,10 +418,11 @@ async function loadPreset(presetName: string): Promise<Result<any, GeneratorErro
       return ok(builtInPresets[presetName])
     }
 
-    return err({
-      code: 'PRESET_NOT_FOUND' as any,
-      message: `Preset '${presetName}' not found`
-    })
+    return err(new GeneratorError(
+      GeneratorErrorCode.INVALID_CONFIG,
+      `Preset '${presetName}' not found`,
+      { presetName }
+    ))
   } catch (error) {
     return err(fromError(error))
   }
@@ -328,6 +481,87 @@ async function getGeneratorConfig(options: any): Promise<Result<GeneratorConfig,
 
     if (options.includePermissions !== undefined) {
       config.api.includePermissions = options.includePermissions
+    }
+
+    if (options.convexAuthMode) {
+      config.integrations = config.integrations || {
+        convexAuthMode: 'scaffold',
+        spacetimeAuthMode: 'scaffold',
+        zeroAuthMode: 'scaffold',
+        convexAuthProfile: 'prod-ready',
+        spacetimeAuthProfile: 'prod-ready',
+        zeroAuthProfile: 'prod-ready',
+      }
+      config.integrations.convexAuthMode = options.convexAuthMode === 'patch' ? 'patch' : 'scaffold'
+    }
+
+    if (options.spacetimeAuthMode) {
+      config.integrations = config.integrations || {
+        convexAuthMode: 'scaffold',
+        spacetimeAuthMode: 'scaffold',
+        zeroAuthMode: 'scaffold',
+        convexAuthProfile: 'prod-ready',
+        spacetimeAuthProfile: 'prod-ready',
+        zeroAuthProfile: 'prod-ready',
+      }
+      config.integrations.spacetimeAuthMode = options.spacetimeAuthMode === 'patch' ? 'patch' : 'scaffold'
+    }
+
+    if (options.zeroAuthMode) {
+      config.integrations = config.integrations || {
+        convexAuthMode: 'scaffold',
+        spacetimeAuthMode: 'scaffold',
+        zeroAuthMode: 'scaffold',
+        convexAuthProfile: 'prod-ready',
+        spacetimeAuthProfile: 'prod-ready',
+        zeroAuthProfile: 'prod-ready',
+      }
+      config.integrations.zeroAuthMode = options.zeroAuthMode === 'patch' ? 'patch' : 'scaffold'
+    }
+
+    if (options.convexAuthProfile) {
+      config.integrations = config.integrations || {
+        convexAuthMode: 'scaffold',
+        spacetimeAuthMode: 'scaffold',
+        zeroAuthMode: 'scaffold',
+        convexAuthProfile: 'prod-ready',
+        spacetimeAuthProfile: 'prod-ready',
+        zeroAuthProfile: 'prod-ready',
+      }
+      config.integrations.convexAuthProfile =
+        options.convexAuthProfile === 'minimal' || options.convexAuthProfile === 'existing-app-merge'
+          ? options.convexAuthProfile
+          : 'prod-ready'
+    }
+
+    if (options.spacetimeAuthProfile) {
+      config.integrations = config.integrations || {
+        convexAuthMode: 'scaffold',
+        spacetimeAuthMode: 'scaffold',
+        zeroAuthMode: 'scaffold',
+        convexAuthProfile: 'prod-ready',
+        spacetimeAuthProfile: 'prod-ready',
+        zeroAuthProfile: 'prod-ready',
+      }
+      config.integrations.spacetimeAuthProfile =
+        options.spacetimeAuthProfile === 'minimal' || options.spacetimeAuthProfile === 'existing-app-merge'
+          ? options.spacetimeAuthProfile
+          : 'prod-ready'
+    }
+
+    if (options.zeroAuthProfile) {
+      config.integrations = config.integrations || {
+        convexAuthMode: 'scaffold',
+        spacetimeAuthMode: 'scaffold',
+        zeroAuthMode: 'scaffold',
+        convexAuthProfile: 'prod-ready',
+        spacetimeAuthProfile: 'prod-ready',
+        zeroAuthProfile: 'prod-ready',
+      }
+      config.integrations.zeroAuthProfile =
+        options.zeroAuthProfile === 'minimal' || options.zeroAuthProfile === 'existing-app-merge'
+          ? options.zeroAuthProfile
+          : 'prod-ready'
     }
 
     return ok(config)

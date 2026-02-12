@@ -32,34 +32,54 @@ export interface ValidationResult {
   }>
 }
 
-// Create enhanced string validator with additional methods
-const stringSchema = z.string()
-const stringValidator = Object.assign(
+function normalizeSchema<T extends z.ZodTypeAny>(schema: T | (() => T)): T {
+  if (typeof schema === 'function' && !('parse' in schema)) {
+    return (schema as () => T)()
+  }
+  if (typeof schema === 'function' && !('_def' in (schema as any))) {
+    return (schema as () => T)()
+  }
+  return schema as T
+}
+
+type StringValidator = {
+  (): z.ZodString
+  parse: z.ZodString['parse']
+  safeParse: z.ZodString['safeParse']
+  optional: () => z.ZodOptional<z.ZodString>
+  nullable: () => z.ZodNullable<z.ZodString>
+  nullish: () => z.ZodOptional<z.ZodNullable<z.ZodString>>
+  regex: (pattern: RegExp, message?: string) => z.ZodString
+  email: (message?: string) => z.ZodString
+  url: (message?: string) => z.ZodString
+  uuid: (message?: string) => z.ZodString
+  min: (min: number, message?: string) => z.ZodString
+  max: (max: number, message?: string) => z.ZodString
+  refine: (refinement: (val: string) => boolean | Promise<boolean>, message?: string) => z.ZodEffects<z.ZodString, string, string>
+  transform: <TOut>(transform: (val: string) => TOut) => z.ZodEffects<z.ZodString, TOut, string>
+  default: (value: string | (() => string)) => z.ZodDefault<z.ZodString>
+}
+
+const baseStringSchema = z.string()
+
+const stringValidator: StringValidator = Object.assign(
   () => z.string(),
   {
-    parse: stringSchema.parse.bind(stringSchema),
-    safeParse: stringSchema.safeParse.bind(stringSchema),
+    parse: baseStringSchema.parse.bind(baseStringSchema),
+    safeParse: baseStringSchema.safeParse.bind(baseStringSchema),
     optional: () => z.string().optional(),
     nullable: () => z.string().nullable(),
     nullish: () => z.string().nullish(),
-    regex: (pattern: RegExp, message?: string) =>
-      z.string().regex(pattern, message || 'Invalid format'),
-    email: (message?: string) =>
-      z.string().email(message || 'Invalid email address'),
-    url: (message?: string) =>
-      z.string().url(message || 'Invalid URL'),
-    uuid: (message?: string) =>
-      z.string().uuid(message || 'Invalid UUID'),
-    min: (min: number, message?: string) =>
-      z.string().min(min, message || `Must be at least ${min} characters`),
-    max: (max: number, message?: string) =>
-      z.string().max(max, message || `Must be at most ${max} characters`),
-    refine: (refinement: (val: string) => boolean | Promise<boolean>, message?: string) =>
-      z.string().refine(refinement, message),
-    transform: (transform: (val: string) => any) =>
-      z.string().transform(transform),
+    regex: (pattern: RegExp, message?: string) => z.string().regex(pattern, message || 'Invalid format'),
+    email: (message?: string) => z.string().email(message || 'Invalid email address'),
+    url: (message?: string) => z.string().url(message || 'Invalid URL'),
+    uuid: (message?: string) => z.string().uuid(message || 'Invalid UUID'),
+    min: (min: number, message?: string) => z.string().min(min, message || `Must be at least ${min} characters`),
+    max: (max: number, message?: string) => z.string().max(max, message || `Must be at most ${max} characters`),
+    refine: (refinement: (val: string) => boolean | Promise<boolean>, message?: string) => z.string().refine(refinement, message),
+    transform: <TOut>(transform: (val: string) => TOut) => z.string().transform(transform),
     default: (value: string | (() => string)) =>
-      z.string().default(value),
+      typeof value === 'function' ? z.string().default(value) : z.string().default(value),
   }
 )
 
@@ -71,7 +91,7 @@ const stringValidator = Object.assign(
  */
 export const validators = {
   // String validators
-  string: z.string(),
+  string: stringValidator,
   email: z.string().email('Invalid email address'),
   url: z.string().url('Invalid URL'),
   uuid: z.string().uuid(),
@@ -101,27 +121,38 @@ export const validators = {
   // Arrays
   stringArray: z.array(z.string()),
   numberArray: z.array(z.number()),
-  array: <T extends z.ZodType>(schema: T) => z.array(schema),
-  arrayMin: <T extends z.ZodType>(schema: T, min: number) => z.array(schema).min(min),
+  array: <T extends z.ZodType>(schema: T | (() => T)) => z.array(normalizeSchema(schema)),
+  arrayMin: <T extends z.ZodType>(schema: T | (() => T), min: number) => z.array(normalizeSchema(schema)).min(min),
 
   // Objects
-  object: <T extends z.ZodRawShape>(shape: T) => z.object(shape),
+  object: <T extends z.ZodRawShape>(shape: T) => {
+    const normalized = Object.fromEntries(
+      Object.entries(shape).map(([key, value]) => [key, normalizeSchema(value as any)])
+    ) as T
+    return z.object(normalized)
+  },
 
   // Unions and intersections
   union: <T extends readonly [z.ZodTypeAny, z.ZodTypeAny, ...z.ZodTypeAny[]]>(schemas: T) =>
-    z.union(schemas),
+    z.union(schemas.map(schema => normalizeSchema(schema as any)) as unknown as T),
 
   // Enums
   enum: <T extends readonly (string | number)[]>(values: T) => {
     // Check if all values are strings
     if (values.every(v => typeof v === 'string')) {
-      return z.enum(values as readonly [string, ...string[]]) as StandardSchema<T[number]>
+      return z.enum(values as unknown as readonly [string, ...string[]]) as StandardSchema<T[number]>
     }
     // For numeric or mixed enums, use union of literals
-    return z.union(values.map(v => z.literal(v))) as StandardSchema<T[number]>
+    if (values.length === 0) {
+      return z.never() as StandardSchema<T[number]>
+    }
+    if (values.length === 1) {
+      return z.literal(values[0]) as StandardSchema<T[number]>
+    }
+    return z.union(values.map(v => z.literal(v)) as unknown as [z.ZodTypeAny, z.ZodTypeAny, ...z.ZodTypeAny[]]) as StandardSchema<T[number]>
   },
   nativeEnum: <T extends Record<string, string | number>>(enumObj: T) =>
-    z.nativeEnum(enumObj) as StandardSchema<T[keyof T]>,
+    z.nativeEnum(enumObj as unknown as z.EnumLike) as unknown as StandardSchema<T[keyof T]>,
 
   // Lazy (for recursive schemas)
   lazy: <T>(fn: () => StandardSchema<T>) => z.lazy(fn as any) as StandardSchema<T>,

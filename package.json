@@ -42,7 +42,11 @@
     "watch": "pridepack watch",
     "start": "pridepack start",
     "dev": "pridepack dev",
-    "test": "vitest --run"
+    "test": "vitest --run",
+    "test:generators": "vitest --run test/templates test/cli test/golden test/contracts",
+    "test:golden": "vitest --run test/golden",
+    "test:integration": "vitest --run test/integration",
+    "verify:generators": "npm run type-check && npm run test:generators"
   },
   "private": false,
   "description": "A powerful CLI tool and library for code generation with configurable templates, TypeScript support, and flexible data transformation utilities",
