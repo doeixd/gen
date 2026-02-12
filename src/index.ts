@@ -237,6 +237,21 @@ export type {
   NormalizedEntityModule,
 } from './vite/entity-discovery-plugin'
 
+// ===== Project Generators =====
+export {
+  discoverProjectGeneratorFiles,
+  loadProjectGenerator,
+  runProjectGenerators,
+} from './project-generators'
+
+export type {
+  ProjectGeneratedFile,
+  ProjectGeneratorEntitySelector,
+  ProjectGenerator,
+  ProjectGeneratorContext,
+  RunProjectGeneratorsOptions,
+} from './project-generators'
+
 // ===== Tags (Tagged Templates for Syntax Highlighting) =====
 export {
   html,

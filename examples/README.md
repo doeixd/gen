@@ -15,6 +15,17 @@ It includes a minimal publishable package with:
 - `package.json` with peer dependency on `@doeixd/gen`
 - a small `vitest` test
 
+## UnJS Generator Demo
+
+For a demo using UnJS tools inside a project-local Gen generator, see:
+
+- `examples/unjs-generator-demo`
+
+This demo shows:
+
+- `knitwork` for typed code generation
+- `magicast` for safe source patching
+
 ## Quick Start
 
 ### Using Custom Generators

@@ -47,6 +47,10 @@ Use these newer capabilities when helping end users:
 - **Vite entity auto-discovery**
   - `createEntityDiscoveryPlugin()`
   - virtual modules: `virtual:gen/entities`, `virtual:gen/entity-map`
+- **Project-local generator discovery**
+  - `*.generator.ts` modules can be auto-discovered and executed after built-in generation
+  - selector support for `targets` and `entities`
+  - CLI controls: `--no-project-generators`, `--project-generator-include`, `--project-generator-exclude`
 
 When users ask how to avoid a single giant entity file, recommend the Vite plugin with `*.entity.ts` files.
 
@@ -246,6 +250,9 @@ Additional options include:
 - `--plan` - Show generation plan and exit
 - `--json` - Show generation plan as JSON and exit
 - `--explain` - Explain what targets generate
+- `--no-project-generators` - Disable discovered project-local generators for a run
+- `--project-generator-include` - Restrict discovery include roots/patterns
+- `--project-generator-exclude` - Exclude generator roots/patterns
 
 Auth integration options:
 - `--convex-auth-mode`, `--spacetime-auth-mode`, `--zero-auth-mode`

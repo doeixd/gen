@@ -20,6 +20,7 @@ import {
 import { logger } from '../../utils/logger.js'
 import { GeneratorError, GeneratorErrorCode, fromError } from '../../utils/errors.js'
 import { readSchemaFile } from '../../utils/schema-parser.js'
+import { runProjectGenerators } from '../../project-generators.js'
 
 // Import generators
 import { generateDatabase } from '../generate.js'
@@ -72,6 +73,9 @@ export function createGenerateCommand(): Command {
     .option('--plan', 'print generation plan and exit')
     .option('--json', 'print generation plan as JSON and exit')
     .option('--explain', 'explain what each target generates')
+    .option('--no-project-generators', 'disable discovered project generators')
+    .option('--project-generator-include <list>', 'comma-separated include patterns/roots for project generators')
+    .option('--project-generator-exclude <list>', 'comma-separated exclude patterns/roots for project generators')
 
   command.action(async (targets: string[], options: any) => {
     try {
@@ -201,6 +205,11 @@ export function createGenerateCommand(): Command {
           spacetimeAuthProfile: config.integrations?.spacetimeAuthProfile,
           zeroAuthProfile: config.integrations?.zeroAuthProfile,
         },
+        projectGenerators: {
+          enabled: options.projectGenerators !== false,
+          include: options.projectGeneratorInclude || null,
+          exclude: options.projectGeneratorExclude || null,
+        },
         details: requestedTargets.map((t: string) => ({ target: t, ...(metadata[t] || { summary: 'No summary available' }) })),
       }
 
@@ -291,6 +300,21 @@ export function createGenerateCommand(): Command {
           })
         })
         process.exit(1)
+      }
+
+      if (options.projectGenerators !== false) {
+        await runProjectGenerators({
+          rootDir: process.cwd(),
+          targets: requestedTargets,
+          entities: filteredEntities as any,
+          config,
+          include: options.projectGeneratorInclude
+            ? options.projectGeneratorInclude.split(',').map((x: string) => x.trim()).filter(Boolean)
+            : undefined,
+          exclude: options.projectGeneratorExclude
+            ? options.projectGeneratorExclude.split(',').map((x: string) => x.trim()).filter(Boolean)
+            : undefined,
+        })
       }
 
       logger.success('🎉 Code generation completed successfully!')

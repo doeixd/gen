@@ -58,6 +58,8 @@
 
 ## 🚀 Quick Start
 
+Full lifecycle guide: `docs/getting-started-full-lifecycle.md`
+
 ### Installation
 
 ```bash
@@ -586,6 +588,51 @@ npm install -D github:your-org/gen-plugin-foo
 
 For generator scripts, Gen expects exported functions like `generateDatabase`, `generateAPI`, `generateFrontend`, `generateTests`, and `generateDocumentation` that receive a single `GeneratorArgs` object.
 
+### Project-Local `*.generator.ts` Files
+
+Gen can auto-discover project generators and run them after built-in targets.
+
+Default discovery paths:
+
+- `src/**/*.generator.ts`
+- `src/**/*.generator.tsx`
+- `src/**/*.generator.js|mjs|cjs`
+
+CLI options:
+
+```bash
+# Run built-in generation + discovered project generators
+@doeixd/gen generate --targets=docs
+
+# Disable project generators for a run
+@doeixd/gen generate --targets=docs --no-project-generators
+
+# Restrict discovery roots/pattern prefixes
+@doeixd/gen generate --targets=docs --project-generator-include=src/custom
+@doeixd/gen generate --targets=docs --project-generator-exclude=src/legacy
+```
+
+Example project generator:
+
+```ts
+// src/custom/task-docs.generator.ts
+import type { ProjectGenerator } from '@doeixd/gen'
+
+export default {
+  id: 'task-docs',
+  targets: ['docs'],
+  entities: ['task'],
+  async generate(ctx) {
+    return [
+      {
+        path: 'generated/task-docs.md',
+        content: `# ${ctx.entities[0]?.name?.plural ?? 'Tasks'}`,
+      },
+    ]
+  },
+} satisfies ProjectGenerator
+```
+
 ### Installing Plugins
 
 ```bash
@@ -649,6 +696,7 @@ npm run verify:generators
 For a publishable external plugin structure, see `docs/plugin-authoring.md`.
 You can also copy the starter package at `examples/plugin-starter`.
 For Vite auto-discovery of distributed `*.entity.ts` files, see `docs/vite-entity-discovery-plugin.md`.
+For using UnJS tools (Magicast, Knitwork, Untyped, Unimport, Giget, Unbuild) in generators, see `docs/unjs-tools-in-generators.md`.
 
 ## 🖥️ CLI Usage
 
